@@ -57,4 +57,4 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
-data/weather_events.csv
+
