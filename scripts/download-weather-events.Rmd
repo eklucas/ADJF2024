@@ -1,0 +1,60 @@
+---
+title: "Weather"
+output: 
+html_notebook: default
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+Get data:
+```{r}
+files <- c("torn", "hail", "wind")
+
+# download and unzip three data files:
+for (file in files){
+  if (file=="torn"){
+    start_year="1950"
+    } else {
+    start_year="1955"
+    }
+  url <- paste0("https://www.spc.noaa.gov/wcm/data/",start_year,"-2023_",file,".csv.zip")
+  zip <- paste0("data/",file,".zip")
+  download.file(url, zip)
+  unzip(zip, exdir="data")
+}
+
+# download specs file
+download.file("https://www.spc.noaa.gov/wcm/data/SPC_severe_database_description.pdf", "docs/SPC_severe_database_description.pdf")
+
+```
+
+Import and standardize data:
+```{r}
+tornado <- read_csv("data/1950-2023_torn.csv")
+wind <- read_csv("data/1955-2023_wind.csv")
+hail <- read_csv("data/1955-2023_hail.csv")
+
+tornado <- tornado %>% mutate(mt="", type="tornado")
+wind <- wind %>% mutate(fc="", .after="f4") %>% mutate(type="wind")
+hail <- hail %>% mutate(fc="", mt="", type="hail")
+
+weather <- rbind(tornado, wind, hail) %>% rename(event_num=1,year=2,month=3,day=4,timezone=7,state=8,fips=9,state_n=10,magnitude=11,injuries=12,fatalities=13,prop_loss=14,crop_loss=15,start_lat=16,end_lat=17,start_lon=18,end_lon=19,length_miles=20,width_yards=21,num_of_states=22,num_state=23,segment=24,cnty1_fips=25,cnty2_fips=26,cnty3_fips=27,cnty4_fips=28,fscale_change=29,magnitude_type=30)
+
+```
+
+To remove duplications of fatalities and injuries, remove records where sn (num_state) = 0 (and type = tornado)
+```{r}
+weather <- weather %>% filter(!(type == "tornado" & num_state == 0))
+```
+
+
+Export
+```{r}
+write_csv(weather, "data/weather_events.csv", na="")
+```
+
+
+
