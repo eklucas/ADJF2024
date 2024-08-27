@@ -1,0 +1,79 @@
+---
+title: "Weather events analysis"
+output: 
+---
+
+Start with the packages you need for this script:
+```{r}
+library(tidyverse)
+```
+
+Load some data
+```{r}
+# this will spit the table out into the console below the code chunk:
+read_csv("data/weather_events.csv")
+
+# this will save the table in a variable called "events" that we can work with later:
+events <- read_csv("data/weather_events.csv")
+```
+
+Assess the data: one of the most important steps in data analysis is getting to know your data, figuring out where it is messy, what's missing, looking for areas where it needs to be cleaned, etc. 
+
+Good places to start: 
+-   How many rows?
+-   What is one row? 
+-   What's in every column?
+-   What are the boundaries?
+```{r}
+# what's the earliest and latest year? 
+# the range() function gives the min and max values for any column:
+range(events$year)
+
+# you can use the summary function to see basic summary statistics on every column (most useful for numbers columns:)
+summary(events)
+```
+
+Preview of tidyverse functions:
+```{r}
+# the select() function returns particular columns:
+events %>% select(date, time, type)
+
+# the arrange() function sorts your data by some column (or columns):
+events %>% arrange(date)
+
+# to see the sort in reverse (descending), add the desc() function inside the arrange() function:
+events %>% arrange(desc(date))
+
+# you can pipe your data through multiple functions:
+events %>% select(date,time,type,state) %>% arrange(desc(date))
+
+# the filter() function shows you a subset of rows based on some criteria:
+events %>% filter(state == "MO")
+
+# show these same rows but sorted by date
+events %>% filter(state == "MO") %>% arrange(desc(date))
+
+# the count() function gives you a distribution summary for any column:
+events %>% count(type)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

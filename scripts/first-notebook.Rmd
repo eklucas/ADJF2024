@@ -1,0 +1,25 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is my first notebook!
+
+```{r}
+a <- 6
+b <- 7
+
+sum(a,b)
+
+```
+
+```{r}
+numbers <- 1:10
+
+sum(numbers)
+mean(numbers)
+median(numbers)
+```
+
+## Homework:
+
