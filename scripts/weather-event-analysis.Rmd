@@ -1,10 +1,15 @@
 ---
 title: "Weather events analysis"
-output: 
+output:
 ---
 
+The data for this analysis can be found on the NOAA's Storm Prediction Center webpage: 
+[https://www.spc.noaa.gov/wcm/#data](https://www.spc.noaa.gov/wcm/#data)
+
+
+
 Start with the packages you need for this script:
-```{r}
+```{r message=F}
 library(tidyverse)
 ```
 
