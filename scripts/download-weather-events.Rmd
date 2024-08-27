@@ -45,11 +45,6 @@ weather <- rbind(tornado, wind, hail) %>% rename(event_num=1,year=2,month=3,day=
 
 ```
 
-To remove duplications of fatalities and injuries, remove records where sn (num_state) = 0 (and type = tornado)
-```{r}
-weather <- weather %>% filter(!(type == "tornado" & num_state == 0))
-```
-
 
 Export
 ```{r}
