@@ -5,7 +5,7 @@ Welcome to Advanced Data Journalism for Fall 2024. This repository will eventual
 Each class period I will commit the code that we work through:
 -   [Aug 26: weather events analysis](https://eklucas.github.io/ADJF2024/scripts/weather-event-analysis.html)
 
-. Because GitHub is not meant to hold large data files, you will find the data files we use in class on Canvas. 
+Because GitHub is not meant to hold large data files, you will find the data files we use in class on Canvas. 
 
 The [tipsheets](/tipsheets) folder has the following resources: 
 -   Tidyverse Cheatsheets: 
