@@ -16,4 +16,4 @@ The [tipsheets](/tipsheets) folder has the following resources:
 -   [R-Functions](https://eklucas.github.io/ADJF2024/tipsheets/R-Functions.html): a guide to the basic R functions that will be most useful to you in analyzing data (consider this a good list of functions you should master by the end of the semester)
 -   [R-dictionary](https://eklucas.github.io/ADJF2024/tipsheets/R-dictionary.html): a list of vocabularly that we will use over and over again to refer to various features of the R language
 -   [Newsroom Math Crib Sheet.pdf](/tipsheets/Newsroom\ Math\ Crib\ Sheet.pdf)
--   [Introduction to R](https://eklucas.github.io/ADJF2024/R-dictionary.html): an overview of R and RStudio
+-   [Introduction to R](https://eklucas.github.io/ADJF2024/Introduction-to-R.html): an overview of R and RStudio
