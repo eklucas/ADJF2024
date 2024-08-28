@@ -3,7 +3,7 @@
 Welcome to Advanced Data Journalism for Fall 2024. This repository will eventually hold all the scripts we work through in class as well as additional resources for your learning (many of which you can also find in Canvas). 
 
 Each class period I will commit the code that we work through:
--   [Aug 26: weather events analysis](https://eklucas.github.io/ADJF2024/scripts/weather-event-analysis.html)
+-   [Aug 26 & 28: weather events analysis](https://eklucas.github.io/ADJF2024/scripts/weather-event-analysis.html)
 
 Because GitHub is not meant to hold large data files, you will find the data files we use in class on Canvas. 
 
