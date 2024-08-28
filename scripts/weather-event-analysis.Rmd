@@ -7,7 +7,6 @@ The data for this analysis can be found on the NOAA's Storm Prediction Center we
 [https://www.spc.noaa.gov/wcm/#data](https://www.spc.noaa.gov/wcm/#data)
 
 
-
 Start with the packages you need for this script:
 ```{r message=F}
 library(tidyverse)
@@ -62,8 +61,93 @@ events %>% filter(state == "MO") %>% arrange(desc(date))
 events %>% count(type)
 ```
 
+To read the documentation for a function, type the function name preceded by a question mark:
+```{r}
+?read_csv
+```
 
+More about filter(): adding multiple criteria, separated by either & (and) or | (or)
+```{r}
+# looking for only tornadoes in Missouri:
+events %>% filter(state=="MO" & type=="tornado")
 
+# looking for only tornadoes in Missouri that resulted in injuries (injuries is a numbers column, numbers do not go in double quotes):
+events %>% filter(state=="MO" & type=="tornado" & injuries > 0)
+
+# string these together to find out which tornado in Missouri resulted in the most injuries
+events %>% 
+  filter(state=="MO" & 
+           type=="tornado" & 
+           injuries > 0) %>% 
+  arrange(desc(injuries))
+
+# how does this compare to tornadoes in the entire country?
+events %>% 
+  filter(type=="tornado" & 
+           injuries > 0) %>% 
+  arrange(desc(injuries)) 
+  
+# use | to broaden your results - find all events in Missouri or Kansas:
+events %>% filter(state=="MO" | state=="KS")
+```
+
+Overview of summarise(): use it to create summary statistics from your dataset. Choose which summary function (sum, median, mean, etc) you want to use:
+```{r}
+# this returns a sum of all fatalities from the dataset:
+events %>% 
+  summarise(sum(fatalities))
+
+# add a filter to see how many of those fatalities were in Missouri: 
+events %>% 
+  filter(state=="MO") %>% 
+  summarise(sum(fatalities))
+
+# best practice is to name the resulting columns that come out of summarise():
+events %>% 
+  summarise(total = sum(fatalities))
+```
+
+Pair summarise() with group_by() to analyze groups within your data
+```{r}
+# to compare a sum of fatalities by state, first use group_by() so that summarise() acts on groups rather than the
+events %>% 
+  group_by(state) %>% 
+  summarise(total = sum(fatalities))
+
+# add arrange() to see which state had the most fatalities overall
+events %>% 
+  group_by(state) %>% 
+  summarise(total = sum(fatalities)) %>% 
+  arrange(desc(total))
+
+# remember the count() function does something similar: provides a count of rows per unique value in any column:
+events %>% count(state)
+
+# to reproduce this using group_by() and summarise(), use the n() summary function which counts rows. This produces the exact same result as the code above:
+events %>% 
+  group_by(state) %>% 
+  summarise(n = n())
+
+# the benefit of using group_by() and summarise() is adding additional summary functions to your analysis:
+events %>% 
+  filter(type=="tornado") %>% 
+  group_by(state) %>% 
+  summarise(n = n(), total_fatal = sum(fatalities)) 
+
+# add in additional functions to find out which state had the most fatalities by tornado, and how many states had at least one hundred fatalities (remember, order matters here):
+events %>% 
+  filter(type=="tornado") %>% 
+  group_by(state) %>% 
+  summarise(n = n(), 
+            total_fatal = sum(fatalities), 
+            total_inj = sum(injuries),
+            avg_fata = mean(fatalities)) %>% 
+  arrange(desc(total_fatal)) %>% 
+  filter(total_fatal > 100)
+
+# if you want to continue analyzing just the tornadoes, create a new table:
+tornadoes <- events %>% filter(type=="tornado")
+```
 
 
 

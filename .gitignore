@@ -8,6 +8,8 @@ Syllabus.pdf
 # data files
 /data
 
+/class-prep
+
 # History files
 .Rhistory
 .Rapp.history

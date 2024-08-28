@@ -606,6 +606,279 @@ events %&gt;% count(type)</code></pre>
 ## 1 hail    395904
 ## 2 tornado  70653
 ## 3 wind    516701</code></pre>
+<p>To read the documentation for a function, type the function name
+preceded by a question mark:</p>
+<pre class="r"><code>?read_csv</code></pre>
+<p>More about filter(): adding multiple criteria, separated by either
+&amp; (and) or | (or)</p>
+<pre class="r"><code># looking for only tornadoes in Missouri:
+events %&gt;% filter(state==&quot;MO&quot; &amp; type==&quot;tornado&quot;)</code></pre>
+<pre><code>## # A tibble: 2,509 × 31
+##    event_num  year month day   date       time   timezone state fips  state_n
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;date&gt;     &lt;time&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;
+##  1         5  1950 01    25    1950-01-25 19:30         3 MO    29          2
+##  2         1  1950 01    03    1950-01-03 11:00         3 MO    29          1
+##  3       140  1950 06    15    1950-06-15 01:00         3 MO    29          4
+##  4       133  1950 06    09    1950-06-09 13:00         3 MO    29          3
+##  5       170  1950 07    19    1950-07-19 16:00         3 MO    29          5
+##  6       181  1950 08    08    1950-08-08 01:00         3 MO    29          6
+##  7       242  1951 11    13    1951-11-13 13:30         3 MO    29          6
+##  8        87  1951 05    25    1951-05-25 21:00         3 MO    29          1
+##  9       130  1951 06    08    1951-06-08 17:45         3 MO    29          2
+## 10       180  1951 07    04    1951-07-04 01:00         3 MO    29          3
+## # ℹ 2,499 more rows
+## # ℹ 21 more variables: magnitude &lt;dbl&gt;, injuries &lt;dbl&gt;, fatalities &lt;dbl&gt;,
+## #   prop_loss &lt;dbl&gt;, crop_loss &lt;dbl&gt;, start_lat &lt;dbl&gt;, end_lat &lt;dbl&gt;,
+## #   start_lon &lt;dbl&gt;, end_lon &lt;dbl&gt;, length_miles &lt;dbl&gt;, width_yards &lt;dbl&gt;,
+## #   num_of_states &lt;dbl&gt;, num_state &lt;dbl&gt;, segment &lt;dbl&gt;, cnty1_fips &lt;dbl&gt;,
+## #   cnty2_fips &lt;dbl&gt;, cnty3_fips &lt;dbl&gt;, cnty4_fips &lt;dbl&gt;, fscale_change &lt;dbl&gt;,
+## #   magnitude_type &lt;chr&gt;, type &lt;chr&gt;</code></pre>
+<pre class="r"><code># looking for only tornadoes in Missouri that resulted in injuries (injuries is a numbers column, numbers do not go in double quotes):
+events %&gt;% filter(state==&quot;MO&quot; &amp; type==&quot;tornado&quot; &amp; injuries &gt; 0)</code></pre>
+<pre><code>## # A tibble: 359 × 31
+##    event_num  year month day   date       time   timezone state fips  state_n
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;date&gt;     &lt;time&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;
+##  1         5  1950 01    25    1950-01-25 19:30         3 MO    29          2
+##  2         1  1950 01    03    1950-01-03 11:00         3 MO    29          1
+##  3       242  1951 11    13    1951-11-13 13:30         3 MO    29          6
+##  4       180  1951 07    04    1951-07-04 01:00         3 MO    29          3
+##  5       233  1952 11    16    1952-11-16 16:00         3 MO    29          9
+##  6        48  1952 03    18    1952-03-18 17:25         3 MO    29          2
+##  7        68  1952 03    21    1952-03-21 20:00         3 MO    29          4
+##  8       139  1952 05    22    1952-05-22 19:00         3 MO    29          6
+##  9       226  1952 08    21    1952-08-21 00:20         3 MO    29          8
+## 10        43  1953 03    14    1953-03-14 17:00         3 MO    29          1
+## # ℹ 349 more rows
+## # ℹ 21 more variables: magnitude &lt;dbl&gt;, injuries &lt;dbl&gt;, fatalities &lt;dbl&gt;,
+## #   prop_loss &lt;dbl&gt;, crop_loss &lt;dbl&gt;, start_lat &lt;dbl&gt;, end_lat &lt;dbl&gt;,
+## #   start_lon &lt;dbl&gt;, end_lon &lt;dbl&gt;, length_miles &lt;dbl&gt;, width_yards &lt;dbl&gt;,
+## #   num_of_states &lt;dbl&gt;, num_state &lt;dbl&gt;, segment &lt;dbl&gt;, cnty1_fips &lt;dbl&gt;,
+## #   cnty2_fips &lt;dbl&gt;, cnty3_fips &lt;dbl&gt;, cnty4_fips &lt;dbl&gt;, fscale_change &lt;dbl&gt;,
+## #   magnitude_type &lt;chr&gt;, type &lt;chr&gt;</code></pre>
+<pre class="r"><code># string these together to find out which tornado in Missouri resulted in the most injuries
+events %&gt;% 
+  filter(state==&quot;MO&quot; &amp; 
+           type==&quot;tornado&quot; &amp; 
+           injuries &gt; 0) %&gt;% 
+  arrange(desc(injuries))</code></pre>
+<pre><code>## # A tibble: 359 × 31
+##    event_num  year month day   date       time   timezone state fips  state_n
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;date&gt;     &lt;time&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;
+##  1    296616  2011 05    22    2011-05-22 16:34         3 MO    29         38
+##  2        24  1959 02    10    1959-02-10 01:40         3 MO    29          3
+##  3        29  1967 01    24    1967-01-24 18:55         3 MO    29          9
+##  4       666  2008 05    10    2008-05-10 16:54         3 MO    29          0
+##  5       376  1957 05    20    1957-05-20 19:37         3 MO    29         12
+##  6       233  2006 04    02    2006-04-02 17:37         3 MO    29         65
+##  7        68  1952 03    21    1952-03-21 20:00         3 MO    29          4
+##  8       395  1957 05    21    1957-05-21 15:53         3 MO    29         19
+##  9      1128  1991 11    29    1991-11-29 18:05         3 MO    29         17
+## 10       233  1971 05    05    1971-05-05 17:55         3 MO    29          8
+## # ℹ 349 more rows
+## # ℹ 21 more variables: magnitude &lt;dbl&gt;, injuries &lt;dbl&gt;, fatalities &lt;dbl&gt;,
+## #   prop_loss &lt;dbl&gt;, crop_loss &lt;dbl&gt;, start_lat &lt;dbl&gt;, end_lat &lt;dbl&gt;,
+## #   start_lon &lt;dbl&gt;, end_lon &lt;dbl&gt;, length_miles &lt;dbl&gt;, width_yards &lt;dbl&gt;,
+## #   num_of_states &lt;dbl&gt;, num_state &lt;dbl&gt;, segment &lt;dbl&gt;, cnty1_fips &lt;dbl&gt;,
+## #   cnty2_fips &lt;dbl&gt;, cnty3_fips &lt;dbl&gt;, cnty4_fips &lt;dbl&gt;, fscale_change &lt;dbl&gt;,
+## #   magnitude_type &lt;chr&gt;, type &lt;chr&gt;</code></pre>
+<pre class="r"><code># how does this compare to tornadoes in the entire country?
+events %&gt;% 
+  filter(type==&quot;tornado&quot; &amp; 
+           injuries &gt; 0) %&gt;% 
+  arrange(desc(injuries)) </code></pre>
+<pre><code>## # A tibble: 7,946 × 31
+##    event_num  year month day   date       time   timezone state fips  state_n
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;date&gt;     &lt;time&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;
+##  1       124  1979 04    10    1979-04-10 17:50         3 TX    48         43
+##  2    314625  2011 04    27    2011-04-27 15:43         3 AL    1         103
+##  3       278  1953 06    09    1953-06-09 14:25         3 MA    25          1
+##  4       116  1974 04    03    1974-04-03 13:30         3 OH    39          3
+##  5    296616  2011 05    22    2011-05-22 16:34         3 MO    29         38
+##  6       275  1953 06    08    1953-06-08 19:30         3 MI    26         10
+##  7       152  1965 04    11    1965-04-11 18:20         3 IN    18         14
+##  8        66  1971 02    21    1971-02-21 16:00         3 MS    28         12
+##  9       162  1953 05    11    1953-05-11 16:10         3 TX    48          9
+## 10      1147  1999 05    03    1999-05-03 17:26         3 OK    40         36
+## # ℹ 7,936 more rows
+## # ℹ 21 more variables: magnitude &lt;dbl&gt;, injuries &lt;dbl&gt;, fatalities &lt;dbl&gt;,
+## #   prop_loss &lt;dbl&gt;, crop_loss &lt;dbl&gt;, start_lat &lt;dbl&gt;, end_lat &lt;dbl&gt;,
+## #   start_lon &lt;dbl&gt;, end_lon &lt;dbl&gt;, length_miles &lt;dbl&gt;, width_yards &lt;dbl&gt;,
+## #   num_of_states &lt;dbl&gt;, num_state &lt;dbl&gt;, segment &lt;dbl&gt;, cnty1_fips &lt;dbl&gt;,
+## #   cnty2_fips &lt;dbl&gt;, cnty3_fips &lt;dbl&gt;, cnty4_fips &lt;dbl&gt;, fscale_change &lt;dbl&gt;,
+## #   magnitude_type &lt;chr&gt;, type &lt;chr&gt;</code></pre>
+<pre class="r"><code># use | to broaden your results - find all events in Missouri or Kansas:
+events %&gt;% filter(state==&quot;MO&quot; | state==&quot;KS&quot;)</code></pre>
+<pre><code>## # A tibble: 105,743 × 31
+##    event_num  year month day   date       time   timezone state fips  state_n
+##        &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt; &lt;date&gt;     &lt;time&gt;    &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;   &lt;dbl&gt;
+##  1         5  1950 01    25    1950-01-25 19:30         3 MO    29          2
+##  2         1  1950 01    03    1950-01-03 11:00         3 MO    29          1
+##  3        58  1950 04    28    1950-04-28 17:00         3 KS    20          1
+##  4       107  1950 05    16    1950-05-16 18:00         3 KS    20         11
+##  5       110  1950 05    18    1950-05-18 19:00         3 KS    20         12
+##  6       111  1950 05    18    1950-05-18 19:00         3 KS    20         13
+##  7       112  1950 05    19    1950-05-19 01:30         3 KS    20         14
+##  8       114  1950 05    23    1950-05-23 18:00         3 KS    20         15
+##  9       115  1950 05    24    1950-05-24 13:30         3 KS    20         16
+## 10       116  1950 05    24    1950-05-24 17:30         3 KS    20         17
+## # ℹ 105,733 more rows
+## # ℹ 21 more variables: magnitude &lt;dbl&gt;, injuries &lt;dbl&gt;, fatalities &lt;dbl&gt;,
+## #   prop_loss &lt;dbl&gt;, crop_loss &lt;dbl&gt;, start_lat &lt;dbl&gt;, end_lat &lt;dbl&gt;,
+## #   start_lon &lt;dbl&gt;, end_lon &lt;dbl&gt;, length_miles &lt;dbl&gt;, width_yards &lt;dbl&gt;,
+## #   num_of_states &lt;dbl&gt;, num_state &lt;dbl&gt;, segment &lt;dbl&gt;, cnty1_fips &lt;dbl&gt;,
+## #   cnty2_fips &lt;dbl&gt;, cnty3_fips &lt;dbl&gt;, cnty4_fips &lt;dbl&gt;, fscale_change &lt;dbl&gt;,
+## #   magnitude_type &lt;chr&gt;, type &lt;chr&gt;</code></pre>
+<p>Overview of summarise(): use it to create summary statistics from
+your dataset. Choose which summary function (sum, median, mean, etc) you
+want to use:</p>
+<pre class="r"><code># this returns a sum of all fatalities from the dataset:
+events %&gt;% 
+  summarise(sum(fatalities))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   `sum(fatalities)`
+##               &lt;dbl&gt;
+## 1              7242</code></pre>
+<pre class="r"><code># add a filter to see how many of those fatalities were in Missouri: 
+events %&gt;% 
+  filter(state==&quot;MO&quot;) %&gt;% 
+  summarise(sum(fatalities))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   `sum(fatalities)`
+##               &lt;dbl&gt;
+## 1               443</code></pre>
+<pre class="r"><code># best practice is to name the resulting columns that come out of summarise():
+events %&gt;% 
+  summarise(total = sum(fatalities))</code></pre>
+<pre><code>## # A tibble: 1 × 1
+##   total
+##   &lt;dbl&gt;
+## 1  7242</code></pre>
+<p>Pair summarise() with group_by() to analyze groups within your
+data</p>
+<pre class="r"><code># to compare a sum of fatalities by state, first use group_by() so that summarise() acts on groups rather than the
+events %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(total = sum(fatalities))</code></pre>
+<pre><code>## # A tibble: 54 × 2
+##    state total
+##    &lt;chr&gt; &lt;dbl&gt;
+##  1 AK        0
+##  2 AL      726
+##  3 AR      440
+##  4 AZ       15
+##  5 CA        7
+##  6 CO       19
+##  7 CT       13
+##  8 DC        2
+##  9 DE        4
+## 10 FL      188
+## # ℹ 44 more rows</code></pre>
+<pre class="r"><code># add arrange() to see which state had the most fatalities overall
+events %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(total = sum(fatalities)) %&gt;% 
+  arrange(desc(total))</code></pre>
+<pre><code>## # A tibble: 54 × 2
+##    state total
+##    &lt;chr&gt; &lt;dbl&gt;
+##  1 AL      726
+##  2 TX      662
+##  3 MS      556
+##  4 MO      443
+##  5 AR      440
+##  6 TN      431
+##  7 OK      370
+##  8 IN      315
+##  9 MI      304
+## 10 IL      267
+## # ℹ 44 more rows</code></pre>
+<pre class="r"><code># remember the count() function does something similar: provides a count of rows per unique value in any column:
+events %&gt;% count(state)</code></pre>
+<pre><code>## # A tibble: 54 × 2
+##    state     n
+##    &lt;chr&gt; &lt;int&gt;
+##  1 AK       38
+##  2 AL    27552
+##  3 AR    29001
+##  4 AZ     5169
+##  5 CA     2309
+##  6 CO    20577
+##  7 CT     2989
+##  8 DC      358
+##  9 DE     1247
+## 10 FL    22778
+## # ℹ 44 more rows</code></pre>
+<pre class="r"><code># to reproduce this using group_by() and summarise(), use the n() summary function which counts rows. This produces the exact same result as the code above:
+events %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(n = n())</code></pre>
+<pre><code>## # A tibble: 54 × 2
+##    state     n
+##    &lt;chr&gt; &lt;int&gt;
+##  1 AK       38
+##  2 AL    27552
+##  3 AR    29001
+##  4 AZ     5169
+##  5 CA     2309
+##  6 CO    20577
+##  7 CT     2989
+##  8 DC      358
+##  9 DE     1247
+## 10 FL    22778
+## # ℹ 44 more rows</code></pre>
+<pre class="r"><code># the benefit of using group_by() and summarise() is adding additional summary functions to your analysis:
+events %&gt;% 
+  filter(type==&quot;tornado&quot;) %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(n = n(), total_fatal = sum(fatalities)) </code></pre>
+<pre><code>## # A tibble: 53 × 3
+##    state     n total_fatal
+##    &lt;chr&gt; &lt;int&gt;       &lt;dbl&gt;
+##  1 AK        4           0
+##  2 AL     2563         679
+##  3 AR     2033         407
+##  4 AZ      285           3
+##  5 CA      476           0
+##  6 CO     2428           5
+##  7 CT      126           4
+##  8 DC        6           0
+##  9 DE       74           3
+## 10 FL     3621         166
+## # ℹ 43 more rows</code></pre>
+<pre class="r"><code># add in additional functions to find out which state had the most fatalities by tornado, and how many states had at least one hundred fatalities (remember, order matters here):
+events %&gt;% 
+  filter(type==&quot;tornado&quot;) %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(n = n(), 
+            total_fatal = sum(fatalities), 
+            total_inj = sum(injuries),
+            avg_fata = mean(fatalities)) %&gt;% 
+  arrange(desc(total_fatal)) %&gt;% 
+  filter(total_fatal &gt; 100)</code></pre>
+<pre><code>## # A tibble: 19 × 5
+##    state     n total_fatal total_inj avg_fata
+##    &lt;chr&gt; &lt;int&gt;       &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+##  1 AL     2563         679      8389   0.265 
+##  2 TX     9350         584      9450   0.0625
+##  3 MS     2682         524      7143   0.195 
+##  4 AR     2033         407      5526   0.200 
+##  5 MO     2509         407      4519   0.162 
+##  6 TN     1405         395      4976   0.281 
+##  7 OK     4252         351      5346   0.0825
+##  8 IN     1639         272      4302   0.166 
+##  9 MI     1099         245      3384   0.223 
+## 10 KS     4502         236      2810   0.0524
+## 11 IL     2868         235      4601   0.0819
+## 12 GA     1935         225      4253   0.116 
+## 13 KY     1169         222      3685   0.190 
+## 14 OH     1299         196      4669   0.151 
+## 15 LA     2325         177      2945   0.0761
+## 16 FL     3621         166      3349   0.0458
+## 17 NC     1490         132      2779   0.0886
+## 18 MA      193         109      1562   0.565 
+## 19 WI     1535         101      1677   0.0658</code></pre>
+<pre class="r"><code># if you want to continue analyzing just the tornadoes, create a new table:
+tornadoes &lt;- events %&gt;% filter(type==&quot;tornado&quot;)</code></pre>
 
 
 
