@@ -1,0 +1,91 @@
+---
+title: "Bloomington salaries analysis"
+output: 
+---
+
+This file was the result of a public records request. It is the salaries of city employees in Bloomington, Indiana.
+
+```{r message=F}
+# remember the first code chunk is used to bring in the packages you need for this script.
+# today we'll be importing an excel file (Blooming Salaries.xlsx, found in Files on Canvas) so we need the readxl package
+
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+# you can read the documentation on this function to see what the required and optional arguments are. Like read_csv(), it's one required argument is a path/file to import. 
+?read_excel
+
+# if you're working in your R project for this class, you only need to tell R to look into the data folder and look for the file "Bloomington Salaries.xlsx"):
+salaries <- read_excel("data/Bloomington Salaries.xlsx")
+
+```
+
+### These are the questions I always ask of data as I'm assessing it, getting familiar with it, etc:
+
+1. How many rows? 1200
+2. What is one row? 
+  We think it's one employee, but how can we tell? Look for duplicates names... 
+  There's one duplicate for "Emily Herr", find out if this is two different people through reporting
+```{r}
+salaries %>% 
+  count(first_name, last_name) %>% 
+  filter(n > 1)
+
+salaries %>% filter(last_name == "Herr" & first_name == "Emily")
+```
+3. Look at every column.
+Notes: 
+- total_comp has no NAs
+- there are no rows with both hourly_rate and salary values
+
+```{r}
+# this will give you some helpful information about the numbers columns in particular. Note that total_comp has no nulls (NAs):
+summary(salaries)
+
+# you can also test whether total_comp has NAs using is.na(): 
+salaries %>% filter(is.na(total_comp))
+# (no rows are returned)
+
+# we assume that each person has either an hourly rate or a salary. Test whether any person has values in both columns. To do this, use ! in front of is.na() to search for values that AREN'T NA:
+salaries %>% filter(!is.na(hourly_rate) & !is.na(salary_2021))
+# (no rows returned)
+
+# The ! can be used to negate other things as well. For example, using != means "not equal to": 
+salaries %>% filter(job_title != "Intern")
+```
+
+For categorical variables such as `department` and `job_title`, check unique values to see if there are misspellings, typos, etc:
+```{r}
+salaries %>% count(department)
+salaries %>% count(job_title)
+
+# both of these seem clean.
+```
+
+### Now to some analysis questions:
+
+Who made the most in overtime? 
+```{r}
+salaries %>% arrange(desc(overtime_oncall))
+# Looks like Jeffrey Rodgers made $41K in overtime, bringint his total comp up to $106K. Why? The data can't tell us why; maybe he's gaming the system, maybe the police are shortstaffed and he has to work nights and weekends. That's a reporting question. The data tells us the "what", not the "why".
+```
+
+How much did the city payout in overtime? 
+```{r}
+# because the overtime_oncall column has NA values in it, if we sum it we'll get NA returned. This is an IMPORTANT thing to know about R:
+salaries %>% summarise(total_overtime = sum(overtime_oncall))
+
+# if you want to apply a summary function (sum, mean, median, etc) to a numbers column that has NAs in it, you have to explicitly tell those functions to remove the NAs, using the na.rm argument:
+salaries %>% summarise(total = sum(overtime_oncall, na.rm=TRUE))
+
+# note that na.rm=TRUE goes inside the sum() function.
+```
+
+
+
+
+
+
+
