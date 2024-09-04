@@ -516,6 +516,39 @@ salaries %&gt;% summarise(total = sum(overtime_oncall, na.rm=TRUE))</code></pre>
 ## 1 1812835.</code></pre>
 <pre class="r"><code># note that na.rm=TRUE goes inside the sum() function.</code></pre>
 </div>
+<div id="introducing-the-mutate-function" class="section level3">
+<h3>Introducing the mutate function</h3>
+<p>Mutate() allows you to create a new column in your dataset: it can
+filled with a static value, or you can fill it using some calculation
+off the existing data. For example, to calculate what percentage of
+someone’s total compensation is made up of overtime, you could use
+mutate() in the following way:</p>
+<pre class="r"><code>salaries %&gt;% 
+  mutate(overtime_pct = overtime_oncall/total_comp)</code></pre>
+<pre><code>## # A tibble: 1,200 × 9
+##    last_name  first_name department         job_title total_comp overtime_oncall
+##    &lt;chr&gt;      &lt;chr&gt;      &lt;chr&gt;              &lt;chr&gt;          &lt;dbl&gt;           &lt;dbl&gt;
+##  1 Carpenter  Danyale    Animal Care &amp; Con… Administ…     28465.            102.
+##  2 Clendening Jennifer   Animal Care &amp; Con… Administ…     25120.             NA 
+##  3 Colford    Micayla    Animal Care &amp; Con… Speciali…       606.             NA 
+##  4 Cook       Shelley    Animal Care &amp; Con… Animal C…     40207.           1622.
+##  5 Dunham     Emily      Animal Care &amp; Con… Intern        12312.             NA 
+##  6 Ennis      Destinee   Animal Care &amp; Con… Animal C…     39978.            329.
+##  7 Ennis      Kathryn    Animal Care &amp; Con… Animal C…     45964.           7349.
+##  8 Ennis      Mary       Animal Care &amp; Con… Administ…     34305.             NA 
+##  9 Eppley     Julia      Animal Care &amp; Con… Shelter …     43319.             NA 
+## 10 Eubank     Nadine     Animal Care &amp; Con… Animal C…     34065.           7456.
+## # ℹ 1,190 more rows
+## # ℹ 3 more variables: hourly_rate &lt;dbl&gt;, salary_2021 &lt;dbl&gt;, overtime_pct &lt;dbl&gt;</code></pre>
+<pre class="r"><code># note that the new column &quot;overtime_pct&quot; is the last column</code></pre>
+<p>The code above creates a new column in the data returned below the
+code chunk, but the table in our environment still only has 8 columns.
+To permanently add this column to your data, you need to overwrite the
+original variable:</p>
+<pre class="r"><code>salaries &lt;- salaries %&gt;% 
+  mutate(overtime_pct = overtime_oncall/total_comp)
+# note that the table isn&#39;t printed below, but now your `salaries` table has 9 columns</code></pre>
+</div>
 
 
 

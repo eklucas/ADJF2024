@@ -84,7 +84,21 @@ salaries %>% summarise(total = sum(overtime_oncall, na.rm=TRUE))
 ```
 
 
+### Introducing the mutate function
+Mutate() allows you to create a new column in your dataset: it can filled with a static value, or you can fill it using some calculation off the existing data. 
+For example, to calculate what percentage of someone's total compensation is made up of overtime, you could use mutate() in the following way: 
+```{r}
+salaries %>% 
+  mutate(overtime_pct = overtime_oncall/total_comp)
+# note that the new column "overtime_pct" is the last column
+```
 
+The code above creates a new column in the data returned below the code chunk, but the table in our environment still only has 8 columns. To permanently add this column to your data, you need to overwrite the original variable:
+```{r}
+salaries <- salaries %>% 
+  mutate(overtime_pct = overtime_oncall/total_comp)
+# note that the table isn't printed below, but now your `salaries` table has 9 columns
+```
 
 
 
