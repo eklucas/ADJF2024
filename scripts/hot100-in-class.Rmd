@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+This dataset is based off of Billboard's weekly Hot 100 songs: https://www.billboard.com/charts/hot-100/
+
+It is compiled by Christian McDonald out of UT-Austin: 
+https://github.com/utdata/rwd-billboard-data
+
+You can download it from Canvas.
+
+```{r message=F}
+library(tidyverse)
+```
+
+```{r}
+hot100 <- read_csv("data/hot-100-current.csv")
+```
+
+### Data Assessment
+How many rows? 345,000
+What is one row? One song for one week
+What's in every column? 
+  chart_week: every Saturday
+  last_week: some 0s and some NAs
+    0s mean the song was on the charts before but not last week
+    NAs mean the song had not been on the charts before
+  chart_week: goes back to 1958, and most recent date is this coming Saturday 
+```{r}
+# remember that count() is very useful in assessing what's in columns:
+hot100 %>% count(current_week) # values 1 - 100
+hot100 %>% count(last_week) # values 1 - 100 plus 0 and NA
+
+# look at rows where last_week is NA or 0, is it because it's the song's first week on the charts?
+hot100 %>% filter(is.na(last_week) | last_week==0) %>% 
+  count(wks_on_chart)
+# no, because wks_on_chart is > 1 for a bunch of these...
+
+# take a look at a few examples:
+hot100 %>% 
+  filter(is.na(last_week) | last_week==0) %>% 
+  filter(wks_on_chart==2)
+
+# look at the details of a particular song to see if we can figure out how it works:
+hot100 %>% 
+  filter(title=="Santa Claus Is Comin' To Town" & performer=="Jackson 5") %>% 
+  arrange(chart_week)
+# yes, 0 means it's been on the chart before, just not last week. NA is truly new to the charts.
+
+# look at the date range (this is a base R function, so it can be used this way or within summarise()):
+range(hot100$chart_week)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
