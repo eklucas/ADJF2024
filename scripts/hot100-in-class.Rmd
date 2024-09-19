@@ -3,12 +3,16 @@ title: "R Notebook"
 output:
   html_document:
     df_print: paged
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
-This dataset is based off of Billboard's weekly Hot 100 songs: https://www.billboard.com/charts/hot-100/
+This dataset is based off of Billboard's weekly Hot 100 songs:
+<https://www.billboard.com/charts/hot-100/>
 
-It is compiled by Christian McDonald out of UT-Austin: 
-https://github.com/utdata/rwd-billboard-data
+It is compiled by Christian McDonald out of UT-Austin:
+<https://github.com/utdata/rwd-billboard-data>
 
 You can download it from Canvas.
 
@@ -21,14 +25,13 @@ hot100 <- read_csv("data/hot-100-current.csv")
 ```
 
 ### Data Assessment
-How many rows? 345,000
-What is one row? One song for one week
-What's in every column? 
-  chart_week: every Saturday
-  last_week: some 0s and some NAs
-    0s mean the song was on the charts before but not last week
-    NAs mean the song had not been on the charts before
-  chart_week: goes back to 1958, and most recent date is this coming Saturday 
+
+How many rows? 345,000 What is one row? One song for one week What's in
+every column? chart_week: every Saturday last_week: some 0s and some NAs
+0s mean the song was on the charts before but not last week NAs mean the
+song had not been on the charts before chart_week: goes back to 1958,
+and most recent date is this coming Saturday
+
 ```{r}
 # remember that count() is very useful in assessing what's in columns:
 hot100 %>% count(current_week) # values 1 - 100
@@ -54,15 +57,90 @@ hot100 %>%
 range(hot100$chart_week)
 ```
 
+---- SEPT 18 -----
 
+Before we go through the assignment questions, think for a moment about what this dataset represents: it's the top 100 songs of each week *according to Billboard.* Well is Billboard the arbiter of good music? How does Billboard decide which songs make rank? You can google that, and you might find this page: [https://www.billboard.com/pro/ask-billboard-how-does-the-hot-100-work/](https://www.billboard.com/pro/ask-billboard-how-does-the-hot-100-work/)
 
+Which says: 
 
+"'Generally speaking, our Hot 100 formula targets a ratio of sales (35-45%), airplay (30-40%) and streaming (20-30%).'
 
+Of course, that’s an overall target for 100 songs each week. That mark can change week-to-week. This week, though, the Hot 100 breaks down in line with the formula’s intent: sales, 39%; airplay, 34%; and, streaming, 27%."
 
+Helpful, but also a little vague. And variable. Still, any story we write about this data can just attribute a song's rank to Billboard. For example, this week's top song, "A Bar Song (Tipsy)" isn't just *the most popular song* in a story, it's *the most popular song according to Billboard.*
 
+**THINK** about your data, where it came from, how it was collected. Now to the questions:
 
+Which artist has appeared on the Hot100 list ("the chart") the most
+times?
 
+```{r}
+#The two lines of code below do exactly the same thing:
 
+hot100 %>% group_by(performer) %>% summarise(n = n()) %>% arrange(desc(n))
 
+hot100 %>% count(performer) %>% arrange(desc(n))
+```
 
+Which song has spent the most time on the chart?
 
+```{r}
+# You can get the answer several ways, here are two. Also keep in mind that song titles are not unique! If you don't include `performer` in the count(), you will see the song "Stay" at the top of the list, but there are 16 performers who sing a song called "Stay."
+
+hot100 %>% count(title,performer) %>% arrange(desc(n))
+
+hot100 %>% arrange(desc(wks_on_chart))
+
+```
+
+Which artist has spent the most weeks at #1?
+
+```{r}
+hot100 %>% filter(current_week==1) %>% count(performer) %>% arrange(desc(n))
+
+# followup: look at Mariah Carey's songs: How much of this fame is attributable to "All I Want for Christmas is You"?
+hot100 %>% 
+  filter(performer == "Mariah Carey" & current_week==1) %>% 
+  count(title) %>% 
+  arrange(desc(n))
+```
+
+Which artist has had the most individual songs?
+
+```{r}
+# introducing the n_distinct() function here, which counts *unique* or *distinct* values instead of just values.
+
+hot100 %>% 
+  group_by(performer) %>% 
+  summarise(n = n_distinct(title)) %>% 
+  arrange(desc(n))
+
+# But are they actually unique songs? Let's take a look at all the distinct values in `title` for just Taylor Swift:
+hot100 %>% 
+  filter(performer=="Taylor Swift") %>% 
+  group_by(title) %>% 
+  summarise(min = min(chart_week), max = max(chart_week))
+
+# There are duplicates, where one song was rerecorded and named "Taylor's Version. Are those unique songs though because they were rerecorded? That's a methodological decision we have to make. We have to define *unique*.
+```
+
+```{r}
+# Another twist in the plot of this data is that sometimes performers feature / collaborite with / team up with other performers. 
+# Using the function grepl() within filter() lets us look for a string of text inside a cell, rather than just doing an exact match:
+
+hot100 %>% filter(grepl("Beyonce",performer,ignore.case=T)) %>% 
+  count(performer) %>% arrange(desc(n))
+
+# Taylor mostly does solo but there are some where she features another artist, or another artist features her... there's also a /, with, etc. A variety of options. What will we include when analyzing Taylor Swift? Another methodological decision.
+```
+
+What was the #1 song when you were born?
+
+```{r}
+hot100 %>% filter(chart_week=="1983-05-28")
+```
+
+Homework Assignment: 
+Explore Hot100 data in search of a potential story. Let your curiosity guide you; ask questions; use code to try and answer them. Even if you can't get the answers, I want to see your efforts. I also want to see your journalistic thinking at play here: what might make for a good story? What are you interested in?
+
+Please submit your .Rmd with your questions / notes / thoughts / conclusions and your code. 
