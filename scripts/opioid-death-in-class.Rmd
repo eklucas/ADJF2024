@@ -1,0 +1,140 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+My CDC WONDER request for opioid-related deaths: 
+https://wonder.cdc.gov/controller/saved/D77/D407F202
+
+```{r message=F}
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+# use this function when your files are tab delimited:
+?read_tsv
+
+# use this function when you have a file that is delimited by something other than a tab or a comma; you can specify the delimiter with the `delim =` argument:
+?read_delim
+
+# for our CDC WONDER file, which is tab delimited, we'll use read_tsv:
+opioid_deaths <- read_tsv("data/Multiple Cause of Death, 1999-2020.txt")
+```
+
+If you take a look at this dataset either in R or in a text editor, you'll see that it has a bunch of notes at the bottom of the file; every CDC WONDER download comes with these notes, which tells you what data you downloaded. That's useful, but we don't want them in our dataset, so as part of our data preparation we'll take out the notes, put them in a separate file, and clean up the data table a little:
+
+```{r}
+# create a variable called `notes` that holds the rows of data with the notes in them, where the `Notes` column is not null (remember the ! means not):
+notes <- opioid_deaths %>% filter(!is.na(Notes)) %>% 
+  select(Notes)
+
+# write the notes to a new file:
+write_csv(notes, "data/opioid-death-notes.csv")
+```
+
+```{r}
+# now save the data variable without those rows that have the notes and without the extra `Notes` column:
+opioid_deaths <- opioid_deaths %>% 
+  filter(is.na(Notes)) %>% 
+  select(-Notes)
+
+# the column names have upper case letters and spaces, so we'll use the function clean_names() from the `janitor` package to standardize the column names:
+opioid_deaths <- clean_names(opioid_deaths)
+
+# and write the clean dataset to a new file:
+write_csv(opioid_deaths, "data/opioid-deaths-clean.csv")
+```
+
+---- WORK WITH NEW CLEAN FILE ----
+
+```{r}
+clean_opioids <- read_csv("data/opioid-deaths-clean.csv")
+```
+
+In class we experimented with using ChatGPT to help us write code to answer some questions of this data. ChatGPT (and other generative ai tools such as Claude.ai) are pretty good at writing code, though we always need to vet the output. It's more useful if you actually know code than if you don't, so you need to keep working on learning the fundamentals of code, but you can use something like ChatGPT as an assistant to help you write code. 
+
+Here's the chat I wrote during class: https://chatgpt.com/share/66f42940-5fb8-8009-bd06-5ca564a4e563
+
+The code that ChatGPT gave me is below:
+
+```{r}
+# How many rows in the data?
+nrow(clean_opioids)
+```
+
+
+```{r}
+# Find the date range of the data
+range(clean_opioids$year)
+```
+```{r}
+# crude_rate is not stored as a number, so check its values:
+clean_opioids %>% count(crude_rate)
+
+# the only non-numeric value is "Unreliable", so we'll convert it to numeric (and those "Unreliable" values will become NA):
+clean_opioids <- clean_opioids %>%
+  mutate(crude_rate = as.numeric(crude_rate))
+```
+
+Prompt: How can I find out if the death rate is going up or down in Missouri
+```{r}
+# Filter for Missouri and check the trend of the crude_rate over the years
+missouri_trend <- clean_opioids %>%
+  filter(state == "Missouri") %>%
+  arrange(year)
+
+# Plot the trend
+ggplot(missouri_trend, aes(x = year, y = crude_rate)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Crude Death Rate in Missouri Over Time", 
+       x = "Year", 
+       y = "Crude Death Rate")
+```
+
+Prompt: I want to compare a graph like this for every state using ggplot2
+(note: originally we graphed all the states but it was hard to read, so I added a filter that only included five states):
+```{r}
+clean_opioids %>% 
+  filter(state %in% c("Missouri","Kansas", "Iowa", "Arkansas", "Illinois")) %>% 
+  ggplot(aes(x = year, y = crude_rate)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ state) +  # Creates a plot for each state, with independent y-axes
+  labs(title = "Crude Death Rate Over Time by State", 
+       x = "Year", 
+       y = "Crude Death Rate") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+Prompt: Create graphics that compare population change over time by state
+
+(note: same problem with comparing all states so I only included those same five)
+```{r}
+# Plot population change over time for each state using facet_wrap
+clean_opioids %>% 
+  filter(state %in% c("Missouri","Kansas", "Iowa", "Arkansas", "Illinois")) %>% 
+  ggplot(aes(x = year, y = population)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~ state) +
+  labs(title = "Population Change Over Time by State", 
+       x = "Year", 
+       y = "Population") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels
+
+# this last graphic isn't very informative, it might be better to plot population percent change over time, or some other comparable metric, but we would have to do the calculations first (or try to have ChatGPT do the calculations).
+```
+
+
+
+
+
+
+
+
