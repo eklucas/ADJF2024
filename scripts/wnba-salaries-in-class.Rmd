@@ -1,0 +1,64 @@
+---
+title: "WNBA Salaries"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  markdown:
+    wrap: 100
+---
+
+Data sources: WNBA salaries: herhoopstats WNBA teams: espn
+
+```{r message=F}
+library(tidyverse)
+```
+
+Load the data (found in Files/data on Canvas):
+
+```{r}
+salaries <- read_csv("data/wnba_salaries.csv")
+teams <- read_csv("data/wnba_teams.csv")
+```
+
+**Get to know the data**
+
+-   how many rows? the tables have different numbers of rows! why?
+-   what is one row? for each table, one row is one player
+-   what's in every column?
+
+Check columns:
+```{r}
+teams %>% count(college)
+# pretty clean, although Texas A&M has an encoding issue
+teams %>% filter(is.na(college))
+# looks like some international players don't have a college listed (they probably went to school overseas)
+```
+Practice joins:
+```{r}
+# Salaries has more rows than teams. Which players in salaries are not in teams? 
+# For this, use anti_join(), which gives you rows from x that don't have a match in y.
+# Look at the column names that share information: `name` from salaries and `player_name` from teams:
+anti_join(salaries, teams, by = c("name" = "player_name"))
+
+# Reverse the order to find rows in teams that are not in salaries:
+anti_join(teams, salaries, by = c("player_name" = "name"))
+
+# If we want to analyze this data, what join should we use? 
+# An inner_join() gives us only matches (we'll lose the three players that are only in one table)
+# A full_join() gives us all the rows, including those three players (this is what we chose):
+full_join(salaries, teams, by = c("name" = "player_name"))
+
+# Note that the new table has 34 columns, all the columns from both tables (minus the duplicative `player_name` from teams).
+
+# We can turn this joined data into a new variable to analyze:
+full_table <- full_join(salaries, teams, by = c("name" = "player_name"))
+
+# You can also incorporate joins within the workflow of analysis. 
+# In the code below we filter salaries for only those players who make at least 50% of their shots, and then join the data to teams, to find out which team has the most high-percentage shooters:
+salaries %>% 
+  filter(field_goal_pct > .5) %>% 
+  left_join(teams, by = c("name" = "player_name")) %>% 
+  count(team) %>% 
+  arrange(desc(n))
+```
