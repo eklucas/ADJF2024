@@ -28,13 +28,16 @@ teams <- read_csv("data/wnba_teams.csv")
 -   what's in every column?
 
 Check columns:
+
 ```{r}
 teams %>% count(college)
 # pretty clean, although Texas A&M has an encoding issue
 teams %>% filter(is.na(college))
 # looks like some international players don't have a college listed (they probably went to school overseas)
 ```
+
 Practice joins:
+
 ```{r}
 # Salaries has more rows than teams. Which players in salaries are not in teams? 
 # For this, use anti_join(), which gives you rows from x that don't have a match in y.
@@ -62,3 +65,232 @@ salaries %>%
   count(team) %>% 
   arrange(desc(n))
 ```
+**REVERSE HOMEWORK! YOU ASK THE QUESTIONS AND I'LL ANSWER THEM.**
+\
+Questions we asked of the data:
+
+1.  How do the tallest and shortest players compare? Specifically, games started (an indication of whether you're a good player).
+**LIZ: When you're comparing "tall" players and "short" players, keep in mind that short > tall is a continuum, these are not buckets. So we either need to create buckets, or we can plot two continuous variables and visually look to see if there are any obvious connections.**
+```{r}
+# 1: create buckets to compare
+# what is the average height of a wnba player? we can use that as a dividing point. we should check it against the median, though, which might be a better middle 
+teams %>% summarise(avg_height = mean(height_in),
+                    med_height = median(height_in))
+# almost the same, so we'll go with 73 inches. 
+
+# 2: look at games_started for each group (above and below average height); let's add in average field goal percentage, and 3-point percentage for a more well-rounded comparison. These are fields from salaries, so we'll do an inner_join (excluding players who aren't in both tables):
+teams %>% 
+  inner_join(salaries, by = c("player_name" = "name")) %>% 
+  filter(height_in < 73) %>% 
+  summarise(n = n(), # how many players overall
+            games_start = mean(games_start), # average games started
+            mean_fgp = mean(field_goal_pct, na.rm=T), # be sure to exclude NAs
+            mean_3pt = mean(three_pointer_pct, na.rm=T)) # be sure to exclude NAs
+
+teams %>% 
+  inner_join(salaries, by = c("player_name" = "name")) %>% 
+  filter(height_in >= 73) %>% 
+  summarise(n = n(),
+            games_start = mean(games_start),
+            mean_fgp = mean(field_goal_pct, na.rm=T),
+            mean_3pt = mean(three_pointer_pct, na.rm=T))
+
+### So, in terms of games started, it's not much different, about one game apart. Not surprisingly, "shorter" players have a better 3-point percentage (they tend to be out on the arc and not under the basket) but "taller" players (who tend to play in the paint and take higher percentage shots) have a higher field goal percentage overall.
+```
+```{r}
+###LIZ: now let's look at a scatterplot of two continuous variables, height and ____ (we'll sub in games_start and field_goal_pct separately):
+teams %>% 
+  inner_join(salaries, by = c("player_name" = "name")) %>% 
+  ggplot(aes(x=height_in, y=games_start)) +
+  geom_point() +
+  geom_smooth()
+# no discernible relationship here
+
+teams %>% 
+  inner_join(salaries, by = c("player_name" = "name")) %>% 
+  ggplot(aes(x=height_in, y=field_goal_pct)) +
+  geom_point() +
+  geom_smooth()
+# maybe a slight relationship - increase in fgp as height reaches the average of about 73. 
+
+###LIZ: keep in mind that to talk about "correlation" we'd have to get more data, multiple years, to really look for a relationship between height and performance, and do a more robust analysis. This is just a gut check graph. 
+
+###Conclusion: no real indication that taller players are better players. 
+```
+
+2.  Who had the best/worst assist to turnover ratio (a common stat for guards)?
+**LIZ: a ratio is usually expressed in 1:X (a common example is teacher to student ratio in public schools; 1:15 is one teacher for every fifteen students). In this stat, "good" is defined as more assists than turnovers. A 1:1 ration would be one turnover for every assist. Ideally a player wants more assists than turnovers: assists/turnovers > 1. We'll start by ignoring players that don't have any assists**
+```{r}
+salaries %>% 
+  filter(assists >= 1) %>% 
+  mutate(assist_turnover_ratio = assists/turnovers) %>% 
+  select(name, assist_turnover_ratio) %>% 
+  arrange(desc(assist_turnover_ratio))
+
+###LIZ: Veronica Burton had 5.5 assists per 1 turnover, which is a good ratio. Conversely, NaLyssa Smith had twice as many turnovers as assists (.5 assists per 1 turnover). She's a young post player, so that's not too surprising. It would be more interesting to compare guards (who play a bigger role in passing) who had a assist/turnover ratio < 1. For that we need position, which is in the teams table:  
+
+salaries %>% 
+  inner_join(teams, by=c("name"="player_name")) %>% 
+  filter(assists >= 1 & position=="G") %>% 
+  mutate(assist_turnover_ratio = assists/turnovers) %>% 
+  select(name, assist_turnover_ratio) %>% 
+  arrange(desc(assist_turnover_ratio))
+
+###LIZ: the guard with the worst ratio still has more assists than turnovers (1.09 assists per 1 turnover). 
+```
+3.  How does physicality (height and weight) factor into performance and salary? 
+**LIZ: this is similar to looking at height and performance. For this, we'll just look at salary. But to take into account both height and weight, it would be helpful to distill that to a single metric. We can use ratios again: weight/height (or pounds per inch, practically speaking). Keep in mind that this is a meaningless number (because our pounds are not evenly distributed between our inches), only useful for comparisons.**
+```{r}
+teams %>% 
+  mutate(HW_ratio = weight/height_in) %>%
+  inner_join(salaries, by=c("player_name"="name")) %>%
+  filter(HW_ratio>0 & contract_amt > 0) %>% 
+  ggplot(aes(x=HW_ratio, y=contract_amt)) + 
+  geom_point() +
+  geom_smooth()
+
+###LIZ: not a ton to see here, either. Could be because WNBA salaries do not have a wide range and are pretty strictly enforced by the bargaining agreement which mostly has to do with tenure and performance but also keeps teams from lowballing any players. In the WNBA you're either climbing the ladder or leaving the league. 
+```
+4.  How does minutes played relate to field goal attempts and percentage? 
+**LIZ: Again, this is not a statistical test but I would do a gut check with a scatterplot, including only those players who actually played minutes and attempted field goals:**
+```{r}
+salaries %>% 
+  filter(minutes > 0 & field_goal_pct) %>% 
+  ggplot(aes(x=minutes, y=field_goal_pct)) +
+  geom_point() +
+  geom_smooth()
+
+###LIZ: there seems to be a slight relationship here; the longer you play, the more field goals you make. Of course the lurking variable here is probably talent: if you're talented, you both get more mintues and make more baskets. 
+```
+5.  Do 2- or 3-pointers have a higher percentage overall? 
+**LIZ: This one is easier. Just summarise the average and median of both types of field goals and compare:**
+```{r}
+salaries %>% 
+  summarise(avg_2pt = mean(two_pointer_pct, na.rm=T),
+            med_2pt = median(two_pointers_made, na.rm=T),
+            avg_3pt = mean(three_pointer_pct, na.rm=T),
+            med_3pt = median(three_pointer_pct, na.rm=T))
+
+###LIZ: two pointers have both a higher average and median percentage.
+```
+6.  What university yields the highest salary? Is it skills based? 
+**LIZ: For this I would group by college and calculate both average and median salary, and potentially also look at how many pro players each school has produced, because average and median aren't very informative if there's only one player**
+```{r}
+teams %>% 
+  inner_join(salaries, by=c("player_name"="name")) %>% 
+  group_by(college) %>% 
+  summarise(players=n(),
+            avg_sal = mean(contract_amt),
+            med_sal = median(contract_amt)) %>% 
+  arrange(desc(avg_sal))
+
+###LIZ: case in point, a lot of schools only have one player and they happen to be paid well. We could control for schools that have at least 2 or more players, to do fair comparisons: 
+teams %>% 
+  inner_join(salaries, by=c("player_name"="name")) %>% 
+  group_by(college) %>% 
+  summarise(players=n(),
+            avg_sal = mean(contract_amt),
+            med_sal = median(contract_amt)) %>% 
+  filter(players > 1) %>% 
+  arrange(desc(med_sal))
+
+###LIZ: some interesting variation here. Keep in mind that schools like South Carolina have produced a lot of pro players in the last four years or so, but some of them are still rookies or in their first couple of years, so they are on the lower end of the pay scale.
+
+```
+7.  How does salary compare between American and international journalists? 
+**LIZ: this is a simple binary comparison, looking at average and median salaries:**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  mutate(US_or_Int = ifelse(country=="USA","US","Int")) %>% 
+  group_by(US_or_Int) %>% 
+  summarise(players=n(),
+            avg_sal = mean(contract_amt),
+            med_sal = median(contract_amt))
+
+###LIZ: there are a lot more of them, but US players make more. 
+```
+8.  How does salary relate to performance (field goal percentage)?
+**LIZ: another example of doing a gut-check scatterplot to see if there's relationship that we should explore further (under the guidance of a statistician)**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  filter(contract_amt > 0 & field_goal_pct > 0) %>% 
+  ggplot(aes(x = contract_amt, y = field_goal_pct)) +
+  geom_point() +
+  geom_smooth()
+
+###LIZ: it does look like better paid players have slightly higher field goal percentages. 
+```
+9.  Does the draft year correlate to 3-point percentage? 
+**LIZ: We're going to be careful with the word "correlate" here; we won't be doing a statistical test for correlation. We're just going to look to see if there's something that calls for further exploration (and consulting a statistician):**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  filter(contract_amt > 0 & three_pointer_pct > 0) %>% 
+  ggplot(aes(x = contract_amt, y = three_pointer_pct)) +
+  geom_point() +
+  geom_smooth()
+
+###LIZ: maaaaybe? Doesn't look like a strong relationship to me. Remember that there are some lurking variables in here, such as playing time!
+```
+10. Which team fouls the most on average? 
+**LIZ: this calls for grouping by team and summing up fouls**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  group_by(team) %>% 
+  summarise(total_fouls = sum(fouls, na.rm=T)) %>% 
+  arrange(desc(total_fouls))
+
+###LIZ: the Sparks have the most fouls per game, on average.
+```
+11. Which colleges produce the players that foul the most and the least? 
+**LIZ: very similar to the last question, we'll change the variable we are grouping by, but we also have to change our summary function. In comparing teams, we know they all play about the same number of games, but that's not true of colleges. For this comparison we'll look at average and median fouls:**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  group_by(college) %>% 
+  summarise(players = n(), 
+            avg_fouls = mean(fouls, na.rm=T),
+            med_fouls = median(fouls, na.rm=T)) %>% 
+  arrange(desc(avg_fouls))
+
+###LIZ: Again we run into the fact that many colleges (including Mizzou) have only one alum in the league. So it's not really fair to base a whole college analysis on one player. These college comparisons would be better with more years of data. 
+```
+12. Which players / teams are the best defensively? (looking at defensive rebounds, blocks and steals)
+**LIZ: We'll start with teams, which will require a group by and summarizing. Looking at players, we can just sort the data by those defensive categories since one row is one player.**
+```{r}
+teams %>% 
+  inner_join(salaries, by = c("player_name"="name")) %>% 
+  group_by(team) %>% 
+  summarise(players = n(),
+            all_Drebounds = sum(defensive_rebounds,na.rm=T),
+            all_blocks = sum(blocks, na.rm=T),
+            all_steals = sum(steals, na.rm=T)) %>% 
+  arrange(desc(all_Drebounds))
+
+###LIZ: something to keep in mind here; it would probably be fairer for a team comparison to get different stats that looked at player performance cumulatively over the whole season, rather than a per game average. If a player only plays a few minutes but has a high field goal percentage, for example, that has the same weight as a player who plays all the time and has the same field goal percentage, even though that second player has a much bigger impact on a team than the player that rarely plays. We're doing math on averages per game, which is not ideal. 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
