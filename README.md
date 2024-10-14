@@ -7,7 +7,8 @@ Each class period I will commit the code that we work through:
 -   [Sept 4: bloomington salaries analysis](https://eklucas.github.io/ADJF2024/scripts/bloomington-analysis.html)
 -   [Sept 11 & 18: Hot 100 initial assessment and analysis](https://eklucas.github.io/ADJF2024/scripts/hot100-in-class.html)
 -   [Sept 23 & 25: Opioid deaths assessment, analysis and graphing](https://eklucas.github.io/ADJF2024/scripts/opioid-death-in-class.html)
--   [Sept 29: Joins with WNBA salaries](https://eklucas.github.io/ADJF2024/scripts/wnba-salaries-in-class.html)
+-   [Sept 29 & Oct 2: Joins with WNBA salaries and reverse homework assignment questions & answers](https://eklucas.github.io/ADJF2024/scripts/wnba-salaries-in-class.html)
+-   [Oct 14: Joins with campaign finance data](https://eklucas.github.io/ADJF2024/scripts/FEC-analysis-in-class.html)
 
 Because GitHub is not meant to hold large data files, you will find the data files we use in class on Canvas. 
 

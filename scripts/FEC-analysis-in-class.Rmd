@@ -1,0 +1,145 @@
+---
+title: "FEC analysis"
+output:
+  html_document:
+    df_print: paged
+---
+
+Source: [fec.gov bulk data](https://www.fec.gov/data/browse-data/?tab=bulk-data) 
+(as of Oct 3, 2024)
+
+See [record layouts for each of the tables here](https://docs.google.com/spreadsheets/d/1SfVu8I58P6sU8NVA9NXHlXKFdKDpFUAMzcE_QzSTVL0/edit?usp=sharing)
+
+```{r message=F}
+library(tidyverse)
+library(lubridate)
+```
+
+Load three data files (found on Canvas)
+```{r}
+transactions <- read_csv("data/transactions.csv")
+candidates <- read_csv("data/candidates.csv")
+committees <- read_csv("data/committees.csv")
+```
+### Assessing the data
+One row = one contribution from an individual to a political action committee (PAC); the PACs may or may not be associated with a particular candidate.
+\
+Exploring the three tables, get to know the data:
+```{r}
+# note that the transaction_dt column is stored as a number, not a date. 
+# to transform it into a true date, use the `lubridate` package. The relevant functions in `lubridate` mimic the *current* format of the date. In our data, it's MMDDYYYY, so we'll use the mdy() function:
+transactions <- transactions %>% mutate(date = mdy(transaction_dt))
+
+# date range of our dataset: 
+range(transactions$date)
+```
+
+This data is for the current election cycle (2023-2024) so I want to take a look at all the dates before 2023:
+```{r}
+transactions %>% filter(date < "2023-01-01")
+
+# there are only a handful; how much money? 
+transactions %>% filter(date < "2023-01-01") %>% summarise(total = sum(transaction_amt))
+
+# in the grand scheme of things, not that much. 
+
+### Usually if the "noise" in a dataset is < 1% of the data, I don't worry about it, though it's a judgment call. 
+```
+
+Remember that part of assessing data is just getting used to what's in each column; try using `count()` on different columns to see what's in them:
+```{r}
+# for example, the transaction_pgi column says what election the donation is assigned to (P is for Primary, G for General, etc)
+transactions %>% count(transaction_pgi) %>% arrange(desc(n))
+```
+
+The `cmte_id` field in the `transactions` table is the PAC reporting the donation from the an individual (in the `name` field). The only thing we know about the receiving committee is its ID, a "C" followed by nine digits. 
+```{r}
+transactions %>% count(cmte_id) %>% arrange(desc(n))
+
+# Committee "C00770941" received the most donations. What about total amount of money? For that we need to switch from count() - which only counts rows - to group_by() and summarise():
+transactions %>% 
+  group_by(cmte_id) %>% 
+  summarise(n = n(),
+            total = sum(transaction_amt)) %>% 
+  arrange(desc(total))
+# The committee that received the most money is "C00744946"
+```
+But what are these committees? We have to look at the `committees` table to find out. We could search for the individual ids:
+```{r}
+committees %>% filter(cmte_id == "C00770941")
+# TRUMP SAVE AMERICA JOINT FUNDRAISING COMMITTEE
+
+committees %>% filter(cmte_id == "C00744946")
+# HARRIS VICTORY FUND 
+```
+
+But joining the transactions and committees tables together can do this work for every row:
+```{r}
+# start with our same calculations by cmte_id:
+transactions %>%
+  group_by(cmte_id) %>% 
+  summarise(n = n(), total = sum(transaction_amt)) %>% 
+  arrange(desc(total)) %>% 
+# add in a left_join so that we can see the committee details for each row:
+  left_join(committees, by = "cmte_id")
+```
+We noted that one committee had only 8 donations but a big amount of money. Take a look at the donations to that committee, called "PROTECT THE HOUSE 2024":
+```{r}
+transactions %>% filter(cmte_id == "C00831925")
+# there are some major donors and recognizable names from Missouri
+```
+
+All the donors we've seen so far are from Missouri. Is that true of the whole dataset?
+```{r}
+transactions %>% count(state)
+# yes; this is a slice of all individual donations from Missourians.
+```
+
+To see how dirty this data can be, look at the city and employer fields for messy data:
+```{r}
+# we sifted through this list to find the many ways that "St Louis" is represented:
+transactions %>% count(city) %>% arrange(desc(city))
+
+# same problem with employer, the entries are not consistent at all
+transactions %>% count(employer) %>% arrange(desc(employer))
+```
+We noticed that someone had put "Your Mom" as their employer. There are lots of strange things that can pop up in this data. For example, when Kanye West ran for President, he put his political party as "Birthday Party", and the FEC added it to the data. 
+
+Note how many people are running for president this election cycle, according to the FEC:
+```{r}
+candidates %>% filter(cand_office == "P" & cand_election_yr == 2024)
+# you've never heard of most of these people, and most of them will never get any traction with their campaigns. Some of them aren't serious contenders. 
+```
+
+Take a look at the candidates table. Like committees, there's a lot of information in here about candidates, including a column called `cand_pcc`, which gives the cmte_id for their "principal campaign committee"; all serious candidates have one. We could use this to see how many donations went to actual candidates (remember not every PAC is affiliated with a candidate). For this, we'll use an inner_join(), because we only want matches from both tables:
+```{r}
+transactions %>% 
+  inner_join(candidates, by = c("cmte_id" = "cand_pcc")) %>% 
+  group_by(cand_name) %>% 
+  summarise(n = n(), 
+            total = sum(transaction_amt)) %>% 
+  arrange(desc(total))
+
+# note that some of these rows look suspicious; two candidates have the same exact number of donations and the same amount. When you see something like this, be skeptical and explore what's going on!
+
+transactions %>% 
+  inner_join(candidates, by = c("cmte_id" = "cand_pcc")) %>% 
+  group_by(cand_name, cmte_id) %>% 
+  summarise(n = n(), 
+            total = sum(transaction_amt)) %>% 
+  arrange(desc(total))
+# by adding cmte_id to the group_by(), we can see that some committee ids are associated with two candidate names. 
+```
+On Wednesday we'll talk about testing joins, but one common test is whether at least one of the tables has only one row per id:
+```{r}
+candidates %>% count(cand_pcc) %>% arrange(desc(n))
+# some of these committees have more than one row, and that is causing a problem in our results.
+```
+
+
+
+
+
+
+
+
