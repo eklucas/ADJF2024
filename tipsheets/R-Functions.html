@@ -361,10 +361,15 @@ into the R environment.</p>
 <li>ex: <code>read_csv(&quot;path/filename.csv&quot;)</code></li>
 </ul></li>
 <li><p><strong>filter()</strong> : select only certain rows from a
-dataset.</p>
+table.</p>
 <ul>
 <li>ex: <code>filter(text_column==&quot;value&quot;)</code> or
 <code>filter(number_column &gt; 0)</code></li>
+</ul></li>
+<li><p><strong>select()</strong> : select only certain columns from a
+table.</p>
+<ul>
+<li>ex: <code>select(column1, column2, column6)</code></li>
 </ul></li>
 <li><p><strong>group_by()</strong> : group the rows in a dataset based
 on the values in one or more columns.</p>
@@ -373,10 +378,10 @@ on the values in one or more columns.</p>
 <code>group_by(column_a, column_b, …)</code></li>
 </ul></li>
 <li><p><strong>summarise()</strong> : apply summary functions (see
-below) to the whole dataset, or to groups if <code>group_by()</code> is
-used</p>
+below) to the whole table, or to groups if <code>group_by()</code> is
+used.</p>
 <ul>
-<li>ex: <code>summarise(total = sum(number_column))</code> or
+<li>ex: <code>summarise(total = sum(number_column)</code> or
 <code>summarise(average = mean(number_column))</code></li>
 </ul></li>
 <li><p><strong>arrange()</strong> : sort results based on one or more
@@ -391,17 +396,27 @@ columns and apply the n() summary function to those groups.</p>
 <ul>
 <li>ex: <code>count(text_column)</code></li>
 </ul></li>
-<li><p><strong>mutate()</strong> : create a new column in a dataset</p>
+<li><p><strong>mutate()</strong> : create a new column in a table, or
+overwrite an existing column with new information.</p>
 <ul>
 <li>ex:
 <code>mutate(new_column = number_column1 + number_column2)</code></li>
 </ul></li>
 </ul>
 </div>
-<div id="summary-functions-for-analysis-used-in-summarise" class="section level3">
-<h3>Summary functions for analysis, used in
-<code>summarise()</code></h3>
+<div id="summary-functions-for-analysis-used-in-summarise-or-summarize" class="section level3">
+<h3>Summary functions for analysis, used in <code>summarise()</code> or
+<code>summarize()</code>:</h3>
 <ul>
+<li><strong>n()</strong> : count rows or observations (no arguments in
+the parentheses).
+<ul>
+<li>ex: <code>summarise(num = n())</code></li>
+</ul></li>
+<li><strong>n_distinct()</strong> : counts unique values in any column.
+<ul>
+<li>ex: <code>summarise(employees = n_distinct(name))</code></li>
+</ul></li>
 <li><strong>sum()</strong> : sum a numbers column. If NAs are present
 will return NA, unless <code>na.rm=T</code> is used.
 <ul>
@@ -412,13 +427,9 @@ present will return NA, unless <code>na.rm=T</code> is used.</li>
 <li><strong>median()</strong> : get the median of a numbers column. If
 NAs are present will return NA, unless <code>na.rm=T</code> is
 used.</li>
-<li><strong>n()</strong> : count rows or observations (no arguments in
-the parentheses).
-<ul>
-<li>ex: <code>summarise(num = n())</code></li>
-</ul></li>
 <li><strong>range()</strong> : get the highest and lowest values in a
-column. This is best used with <code>reframe()</code> instead of
+column. If NAs are present will return NA, unless <code>na.rm=T</code>
+is used. This is best used with <code>reframe()</code> instead of
 <code>summarise()</code>:
 <ul>
 <li>ex: <code>reframe(range(column))</code></li>
