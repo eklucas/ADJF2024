@@ -9,8 +9,8 @@ Each class period I will commit the code that we work through:
 -   [Sept 23 & 25: Opioid deaths assessment, analysis and graphing](https://eklucas.github.io/ADJF2024/scripts/opioid-death-in-class.html)
 -   [Sept 29 & Oct 2: Joins with WNBA salaries and reverse homework assignment questions & answers](https://eklucas.github.io/ADJF2024/scripts/wnba-salaries-in-class.html)
 -   [Oct 14 & 16: Joins with campaign finance data](https://eklucas.github.io/ADJF2024/scripts/FEC-analysis-in-class.html)
--   [Oct 21 & 30]: [Data cleaning Intro](https://eklucas.github.io/ADJF2024/scripts/data-cleaning-intro.html)
--   [Oct 28 & 30]: [Using tidycensus](https://eklucas.github.io/ADJF2024/scripts/tidycensus-in-class.html)
+-   [Oct 21 & 30: Data cleaning Intro](https://eklucas.github.io/ADJF2024/scripts/data-cleaning-intro.html)
+-   [Oct 28 & 30: Using tidycensus](https://eklucas.github.io/ADJF2024/scripts/tidycensus-in-class.html)
 
 Because GitHub is not meant to hold large data files, you will find the data files we use in class on Canvas. 
 
