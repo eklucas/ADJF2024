@@ -130,11 +130,70 @@ transactions %>%
   arrange(desc(total))
 # by adding cmte_id to the group_by(), we can see that some committee ids are associated with two candidate names. 
 ```
+```{r}
+candidates %>% filter(cand_pcc == "C00703975")
+
+committees %>% filter(cmte_id == "C00703975")
+
+committees %>% count(cmte_id) %>% arrange(desc(n))
+```
+
+
 On Wednesday we'll talk about testing joins, but one common test is whether at least one of the tables has only one row per id:
 ```{r}
 candidates %>% count(cand_pcc) %>% arrange(desc(n))
 # some of these committees have more than one row, and that is causing a problem in our results.
 ```
+
+```{r}
+transactions %>% count(cmte_id) %>% arrange(desc(n))
+```
+
+```{r}
+candidates %>% count(cand_pcc) %>% arrange(desc(n))
+```
+Look for all committees that directly support candidates
+```{r}
+cand_committees <- committees %>% filter(!is.na(cand_id))
+```
+
+Use an inner_join() to combine transactions and cand_committees
+```{r}
+transactions %>% 
+  inner_join(cand_committees, by = "cmte_id") %>% 
+  group_by(cmte_nm, cand_id) %>% 
+  summarise(n = n(), total = sum(transaction_amt)) %>% 
+  arrange(desc(total)) %>% 
+  inner_join(candidates, by = "cand_id")
+```
+```{r}
+candidates %>% count(cand_id) %>% arrange(desc(n))
+```
+
+Questions: 
+-   Who's giving money to the big Republican committees
+```{r}
+# NRSC, RNC, NRCC
+committees %>% filter(cmte_nm %in% c("NRSC", "RNC", "NRCC"))
+# C00027466, C00075820
+
+committees %>% filter(grepl("Republican", cmte_nm, ignore.case=T))
+# C00003418
+
+transactions %>% 
+  filter(cmte_id %in% c("C00027466","C00075820","C00003418")) %>% 
+  group_by(name,city) %>% 
+  summarise(total_amt = sum(transaction_amt)) %>% 
+  arrange(name)
+```
+
+
+-   Which political party gets the most money? 
+-   Which Missouri city has the highest percentage of Democratic giving? 
+-   Does Lucas Kunce reject corporate PAC donations? 
+
+
+
 
 
 

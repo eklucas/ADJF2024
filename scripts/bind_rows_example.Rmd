@@ -1,0 +1,39 @@
+---
+title: "Bind rows"
+output: html_notebook
+---
+
+```{r message=F}
+library(tidyverse)
+```
+
+```{r}
+getwd()
+data_2002 <- read_csv("~/Documents/GitHub/city-documents/police/SRS/SRS Offenses Known to Police 2002.csv")
+
+data_2003 <- read_csv("~/Documents/GitHub/city-documents/police/SRS/SRS Offenses Known to Police 2003.csv")
+```
+
+
+```{r}
+bind_rows(data_2002, data_2003)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

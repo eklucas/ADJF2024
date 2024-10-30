@@ -1,0 +1,51 @@
+---
+title: "Cleaning practice"
+output: 
+---
+
+LIBRARIES:
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(readxl)
+```
+
+DATA (located in Files on Canvas):
+
+```{r}
+# transactions file from our earlier work with FEC Campaign Finance
+transactions <- read_csv("data/transactions.csv")
+
+# deaths file h/t Mary Jo Webster, data editor of the Minnesota Star Tribune
+mn_deaths <- read_csv("data/MN_opiate_deaths.csv")
+
+# a Census Bureau file of population by state for five years, 2018 - 2022
+state_pop <- read_csv("data/state_pop.csv")
+```
+
+TASKS: `transactions`
+
+1.  convert the transaction_dt to a true date column
+2.  create a new column in the `transactions` table that is a 5-digit zip code (always the first 5 when there are 9 digits.)
+
+TASKS: `mn_deaths`
+
+1.  check if there are duplicates (using StateID & using names/dob)
+```{r}
+mn_deaths %>% count(FIRSTNAME, MIDDLENAME, LASTNAME, BIRTHDATE) %>% arrange(desc(n))
+
+mn_deaths %>% count(STATEID) %>% arrange(desc(n))
+```
+
+
+2.  check / clean up HISPANICETHNICITY (into standardized values)
+3.  convert BIRTDATE & DEATHDATE
+
+TASKS: `state_pop`
+
+1.  Reorganize the file so that you can calculate the percent change for each states population from 2018 to 2022. 
+2.  Which state has increased the most? 
+3.  Which states have decreased in population? 
+4.  Where does Missouri rank? 
