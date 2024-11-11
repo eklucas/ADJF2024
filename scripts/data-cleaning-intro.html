@@ -11,7 +11,7 @@
 
 
 
-<title>R-Functions.knit</title>
+<title>Data cleaning with tidyr, stringr and lubridate</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -348,115 +348,519 @@ display: none;
 
 
 
+<h1 class="title toc-ignore">Data cleaning with tidyr, stringr and
+lubridate</h1>
 
 </div>
 
 
-<div id="primary-functions-for-data-analysis" class="section level3">
-<h3>Primary functions for data analysis:</h3>
-<ul>
-<li><p><strong>read_csv()</strong> : imports text files in CSV format
-into the R environment.</p>
-<ul>
-<li>ex: <code>read_csv(&quot;path/filename.csv&quot;)</code></li>
-</ul></li>
-<li><p><strong>filter()</strong> : select only certain rows from a
-table.</p>
-<ul>
-<li>ex: <code>filter(text_column==&quot;value&quot;)</code> or
-<code>filter(number_column &gt; 0)</code></li>
-</ul></li>
-<li><p><strong>select()</strong> : select only certain columns from a
-table.</p>
-<ul>
-<li>ex: <code>select(column1, column2, column6)</code></li>
-</ul></li>
-<li><p><strong>group_by()</strong> : group the rows in a dataset based
-on the values in one or more columns.</p>
-<ul>
-<li>ex: <code>group_by(column)</code> or
-<code>group_by(column_a, column_b, …)</code></li>
-</ul></li>
-<li><p><strong>summarise()</strong> : apply summary functions (see
-below) to the whole table, or to groups if <code>group_by()</code> is
-used.</p>
-<ul>
-<li>ex: <code>summarise(total = sum(number_column)</code> or
-<code>summarise(average = mean(number_column))</code></li>
-</ul></li>
-<li><p><strong>arrange()</strong> : sort results based on one or more
-columns; ascending is the default, use <code>desc()</code> for
-descending.</p>
-<ul>
-<li>ex: <code>arrange(column)</code> or
-<code>arrange(desc(column))</code></li>
-</ul></li>
-<li><p><strong>count()</strong> : group the data based on a column or
-columns and apply the n() summary function to those groups.</p>
-<ul>
-<li>ex: <code>count(text_column)</code></li>
-</ul></li>
-<li><p><strong>mutate()</strong> : create a new column in a table, or
-overwrite an existing column with new information.</p>
-<ul>
-<li>ex:
-<code>mutate(new_column = number_column1 + number_column2)</code></li>
-</ul></li>
-</ul>
+<p>Load the libraries: tidyverse and lubridate</p>
+<pre class="r"><code>library(tidyverse)
+library(lubridate)</code></pre>
+<p>Load the data. We’ll use three different files with different
+cleaning / reshaping needs:</p>
+<pre class="r"><code>disney &lt;- read_csv(&quot;data/disney_movies_total_gross.csv&quot;)</code></pre>
+<pre><code>## Rows: 579 Columns: 6
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (6): movie_title, release_date, genre, MPAA_rating, total_gross, inflati...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>osha &lt;- read_csv(&quot;data/osha.csv&quot;)</code></pre>
+<pre><code>## Rows: 84555 Columns: 31
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (10): company_name, establishment_name, ein, street_address, city, state...
+## dbl (21): id, naics_code, annual_average_employees, total_hours_worked, no_i...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>poverty &lt;- read_csv(&quot;data/poverty_original.csv&quot;)</code></pre>
+<pre><code>## Rows: 28989 Columns: 5
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (3): GEOID, NAME, variable
+## dbl (2): estimate, moe
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<p>Start with the <code>disney</code> file.</p>
+<pre class="r"><code>glimpse(disney)</code></pre>
+<pre><code>## Rows: 579
+## Columns: 6
+## $ movie_title              &lt;chr&gt; &quot;Snow White and the Seven Dwarfs&quot;, &quot;Pinocchio…
+## $ release_date             &lt;chr&gt; &quot;Dec 21, 1937&quot;, &quot;Feb 9, 1940&quot;, &quot;Nov 13, 1940&quot;…
+## $ genre                    &lt;chr&gt; &quot;Musical&quot;, &quot;Adventure&quot;, &quot;Musical&quot;, &quot;Adventure…
+## $ MPAA_rating              &lt;chr&gt; &quot;G&quot;, &quot;G&quot;, &quot;G&quot;, &quot;G&quot;, &quot;G&quot;, NA, &quot;G&quot;, NA, &quot;G&quot;, NA…
+## $ total_gross              &lt;chr&gt; &quot;$184,925,485&quot;, &quot;$84,300,000&quot;, &quot;$83,320,000&quot;,…
+## $ inflation_adjusted_gross &lt;chr&gt; &quot;$5,228,953,251&quot;, &quot;$2,188,229,052&quot;, &quot;$2,187,0…</code></pre>
+<p>There are a bunch of issues with the formatting in this dataset: the
+dates are imported as text because they’re written out, and the
+<code>total_gross</code> and <code>inflation_adjusted_gross</code> are
+both appearing as numbers because they were imported with dollar signs
+and commas. To start, let’s deal with dates. <code>lubridate</code>
+offers many functions to convert dates formatted in different types.
+Check the documentation for different functions to address different
+formats; the one we’ll use here is the <code>mdy()</code> function.</p>
+<pre class="r"><code>disney %&gt;% 
+  mutate(new_dt = mdy(release_date))</code></pre>
+<pre><code>## # A tibble: 579 × 7
+##    movie_title release_date genre MPAA_rating total_gross inflation_adjusted_g…¹
+##    &lt;chr&gt;       &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;       &lt;chr&gt;                 
+##  1 Snow White… Dec 21, 1937 Musi… G           $184,925,4… $5,228,953,251        
+##  2 Pinocchio   Feb 9, 1940  Adve… G           $84,300,000 $2,188,229,052        
+##  3 Fantasia    Nov 13, 1940 Musi… G           $83,320,000 $2,187,090,808        
+##  4 Song of th… Nov 12, 1946 Adve… G           $65,000,000 $1,078,510,579        
+##  5 Cinderella  Feb 15, 1950 Drama G           $85,000,000 $920,608,730          
+##  6 20,000 Lea… Dec 23, 1954 Adve… &lt;NA&gt;        $28,200,000 $528,279,994          
+##  7 Lady and t… Jun 22, 1955 Drama G           $93,600,000 $1,236,035,515        
+##  8 Sleeping B… Jan 29, 1959 Drama &lt;NA&gt;        $9,464,608  $21,505,832           
+##  9 101 Dalmat… Jan 25, 1961 Come… G           $153,000,0… $1,362,870,985        
+## 10 The Absent… Mar 16, 1961 Come… &lt;NA&gt;        $25,381,407 $310,094,574          
+## # ℹ 569 more rows
+## # ℹ abbreviated name: ¹​inflation_adjusted_gross
+## # ℹ 1 more variable: new_dt &lt;date&gt;</code></pre>
+<pre class="r"><code># I like to tack on a select() to easily see whether the date field converted properly:
+disney %&gt;% 
+  mutate(new_dt = mdy(release_date)) %&gt;% 
+  select(new_dt, release_date)</code></pre>
+<pre><code>## # A tibble: 579 × 2
+##    new_dt     release_date
+##    &lt;date&gt;     &lt;chr&gt;       
+##  1 1937-12-21 Dec 21, 1937
+##  2 1940-02-09 Feb 9, 1940 
+##  3 1940-11-13 Nov 13, 1940
+##  4 1946-11-12 Nov 12, 1946
+##  5 1950-02-15 Feb 15, 1950
+##  6 1954-12-23 Dec 23, 1954
+##  7 1955-06-22 Jun 22, 1955
+##  8 1959-01-29 Jan 29, 1959
+##  9 1961-01-25 Jan 25, 1961
+## 10 1961-03-16 Mar 16, 1961
+## # ℹ 569 more rows</code></pre>
+<p>Go ahead and make that new column permanent, and use the
+<code>.after</code> argument to place the column in the middle of our
+table:</p>
+<pre class="r"><code>disney &lt;- disney %&gt;% mutate(new_dt = mdy(release_date), .after=release_date)</code></pre>
+<p>Now to the numbers columns: <code>total_gross</code> and
+<code>inflation_adjusted_gross</code>. There’s a function in
+<code>tidyverse</code> that comes from the <code>readr</code> package
+called <code>parse_number()</code> that will do all the work for you.
+See it in action:</p>
+<pre class="r"><code>disney %&gt;% mutate(new_total_gross = parse_number(total_gross)) %&gt;% select(total_gross, new_total_gross)</code></pre>
+<pre><code>## # A tibble: 579 × 2
+##    total_gross  new_total_gross
+##    &lt;chr&gt;                  &lt;dbl&gt;
+##  1 $184,925,485       184925485
+##  2 $84,300,000         84300000
+##  3 $83,320,000         83320000
+##  4 $65,000,000         65000000
+##  5 $85,000,000         85000000
+##  6 $28,200,000         28200000
+##  7 $93,600,000         93600000
+##  8 $9,464,608           9464608
+##  9 $153,000,000       153000000
+## 10 $25,381,407         25381407
+## # ℹ 569 more rows</code></pre>
+<p>👉YOUR TURN Write some code to create two new columns to convert both
+<code>total_gross</code> and <code>inflation_adjusted_gross</code>:</p>
+<pre class="r"><code>disney &lt;- disney %&gt;% mutate(
+  new_total_gross = parse_number(total_gross),
+  new_inflation_adjusted = parse_number(inflation_adjusted_gross)
+)</code></pre>
+<p>👉YOUR TURN Now you you can ask, in inflation-adjusted dollars, which
+disney movie is the highest-grossing movie of all time?</p>
+<pre class="r"><code>disney %&gt;% arrange(desc(new_inflation_adjusted))</code></pre>
+<pre><code>## # A tibble: 579 × 9
+##    movie_title             release_date new_dt     genre MPAA_rating total_gross
+##    &lt;chr&gt;                   &lt;chr&gt;        &lt;date&gt;     &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      
+##  1 Snow White and the Sev… Dec 21, 1937 1937-12-21 Musi… G           $184,925,4…
+##  2 Pinocchio               Feb 9, 1940  1940-02-09 Adve… G           $84,300,000
+##  3 Fantasia                Nov 13, 1940 1940-11-13 Musi… G           $83,320,000
+##  4 101 Dalmatians          Jan 25, 1961 1961-01-25 Come… G           $153,000,0…
+##  5 Lady and the Tramp      Jun 22, 1955 1955-06-22 Drama G           $93,600,000
+##  6 Song of the South       Nov 12, 1946 1946-11-12 Adve… G           $65,000,000
+##  7 Star Wars Ep. VII: The… Dec 18, 2015 2015-12-18 Adve… PG-13       $936,662,2…
+##  8 Cinderella              Feb 15, 1950 1950-02-15 Drama G           $85,000,000
+##  9 The Jungle Book         Oct 18, 1967 1967-10-18 Musi… Not Rated   $141,843,0…
+## 10 The Lion King           Jun 15, 1994 1994-06-15 Adve… G           $422,780,1…
+## # ℹ 569 more rows
+## # ℹ 3 more variables: inflation_adjusted_gross &lt;chr&gt;, new_total_gross &lt;dbl&gt;,
+## #   new_inflation_adjusted &lt;dbl&gt;</code></pre>
+<pre class="r"><code>disney %&gt;% arrange(new_dt)</code></pre>
+<pre><code>## # A tibble: 579 × 9
+##    movie_title             release_date new_dt     genre MPAA_rating total_gross
+##    &lt;chr&gt;                   &lt;chr&gt;        &lt;date&gt;     &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      
+##  1 Snow White and the Sev… Dec 21, 1937 1937-12-21 Musi… G           $184,925,4…
+##  2 Pinocchio               Feb 9, 1940  1940-02-09 Adve… G           $84,300,000
+##  3 Fantasia                Nov 13, 1940 1940-11-13 Musi… G           $83,320,000
+##  4 Song of the South       Nov 12, 1946 1946-11-12 Adve… G           $65,000,000
+##  5 Cinderella              Feb 15, 1950 1950-02-15 Drama G           $85,000,000
+##  6 20,000 Leagues Under t… Dec 23, 1954 1954-12-23 Adve… &lt;NA&gt;        $28,200,000
+##  7 Lady and the Tramp      Jun 22, 1955 1955-06-22 Drama G           $93,600,000
+##  8 Sleeping Beauty         Jan 29, 1959 1959-01-29 Drama &lt;NA&gt;        $9,464,608 
+##  9 101 Dalmatians          Jan 25, 1961 1961-01-25 Come… G           $153,000,0…
+## 10 The Absent Minded Prof… Mar 16, 1961 1961-03-16 Come… &lt;NA&gt;        $25,381,407
+## # ℹ 569 more rows
+## # ℹ 3 more variables: inflation_adjusted_gross &lt;chr&gt;, new_total_gross &lt;dbl&gt;,
+## #   new_inflation_adjusted &lt;dbl&gt;</code></pre>
+<div id="adding-description-columns" class="section level3">
+<h3>Adding description columns</h3>
+<p>Next we’ll take a look at <code>osha</code>.</p>
+<pre class="r"><code>glimpse(osha)</code></pre>
+<pre><code>## Rows: 84,555
+## Columns: 31
+## $ id                           &lt;dbl&gt; 1426066, 1426069, 1426098, 1426099, 14261…
+## $ company_name                 &lt;chr&gt; &quot;Weir&quot;, &quot;Procter &amp; Gamble Manufacturing&quot;,…
+## $ establishment_name           &lt;chr&gt; &quot;Weir Minerals&quot;, &quot;Procter &amp; Gamble Manufa…
+## $ ein                          &lt;chr&gt; &quot;391147488&quot;, &quot;310411982&quot;, &quot;520636385&quot;, &quot;5…
+## $ street_address               &lt;chr&gt; &quot;2701 S. Stoughton Rd.&quot;, &quot;8201 Fruitridge…
+## $ city                         &lt;chr&gt; &quot;Madison&quot;, &quot;Sacramento&quot;, &quot;Knightdale&quot;, &quot;R…
+## $ state                        &lt;chr&gt; &quot;WI&quot;, &quot;CA&quot;, &quot;NC&quot;, &quot;MD&quot;, &quot;MD&quot;, &quot;MI&quot;, &quot;VA&quot;,…
+## $ zip_code                     &lt;chr&gt; &quot;53716&quot;, &quot;95826&quot;, &quot;27545&quot;, &quot;21136&quot;, &quot;2120…
+## $ naics_code                   &lt;dbl&gt; 333911, 325611, 237110, 237110, 812220, 2…
+## $ industry_description         &lt;chr&gt; &quot;Centrifugal pumps manufacturing&quot;, &quot;Glyce…
+## $ annual_average_employees     &lt;dbl&gt; 275, 115, 138, 137, 478, 130, 200, 130, 1…
+## $ total_hours_worked           &lt;dbl&gt; 505738, 258824, 311326, 306768, 994240, 1…
+## $ no_injuries_illnesses        &lt;dbl&gt; 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1,…
+## $ total_deaths                 &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ total_dafw_cases             &lt;dbl&gt; 1, 1, 2, 0, 2, 0, 0, 3, 0, 0, 2, 1, 1, 2,…
+## $ total_djtr_cases             &lt;dbl&gt; 0, 0, 1, 0, 3, 0, 2, 2, 0, 2, 0, 1, 0, 3,…
+## $ total_other_cases            &lt;dbl&gt; 0, 1, 4, 4, 0, 0, 1, 3, 0, 0, 0, 1, 0, 7,…
+## $ total_dafw_days              &lt;dbl&gt; 14, 80, 41, 0, 21, 0, 0, 51, 0, 0, 171, 1…
+## $ total_djtr_days              &lt;dbl&gt; 0, 0, 127, 0, 10, 0, 17, 162, 0, 12, 0, 1…
+## $ total_injuries               &lt;dbl&gt; 1, 2, 7, 4, 5, 0, 3, 8, 0, 2, 2, 3, 1, 12…
+## $ total_poisonings             &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ total_respiratory_conditions &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ total_skin_disorders         &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ total_hearing_loss           &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ total_other_illnesses        &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,…
+## $ establishment_id             &lt;dbl&gt; 626729, 406251, 296934, 296933, 687387, 6…
+## $ establishment_type           &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,…
+## $ size                         &lt;dbl&gt; 3, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 3,…
+## $ year_filing_for              &lt;dbl&gt; 2021, 2021, 2021, 2021, 2021, 2021, 2021,…
+## $ created_timestamp            &lt;chr&gt; &quot;1/1/2022 11:14:06&quot;, &quot;1/1/2022 14:58:25&quot;,…
+## $ change_reason                &lt;chr&gt; NA, NA, NA, NA, NA, NA, &quot;Total hours were…</code></pre>
+<p>If you look through the <a href="https://www.osha.gov/sites/default/files/ITA_Data_Dictionary.pdf">documentation</a>
+for this dataset, you’ll notice that some of these fields are coded,
+such as <code>size</code> and <code>establishment_type</code>. For
+columns that have many value options, we might want to join to a lookup
+table. But for just a few values, we can add a <code>_desc</code> column
+into our data and code in values based on the original column.</p>
+<p>We’ll add an <code>estab_type_desc</code> column based on the values
+in <code>establishment_type</code>, using a function called
+<code>case_when()</code>. This is something like an <code>if</code> or
+<code>ifelse</code> statement:</p>
+<pre class="r"><code># test it out
+osha %&gt;% mutate(estab_type_desc = case_when(
+  establishment_type==1 ~ &quot;Not a Government Entity&quot;,
+  establishment_type==2 ~ &quot;State Government Entity&quot;,
+  establishment_type==3 ~ &quot;Local Government Entity&quot;,
+  TRUE ~ &quot;Error&quot;
+)) %&gt;% 
+  count(establishment_type, estab_type_desc)</code></pre>
+<pre><code>## # A tibble: 4 × 3
+##   establishment_type estab_type_desc             n
+##                &lt;dbl&gt; &lt;chr&gt;                   &lt;int&gt;
+## 1                  1 Not a Government Entity 79805
+## 2                  2 State Government Entity  1881
+## 3                  3 Local Government Entity  2444
+## 4                 NA Error                     425</code></pre>
+<p>Inside the <code>case_when()</code> function, our code is saying: Run
+the first test. Is establishment_type equal to 1? If TRUE, then set
+estab_type_desc equal to “Not a Government Entity.” If FALSE, move to
+the next line. Run the second test. Is establishment_type equal to 2? If
+TRUE, then set estab_type_desc equal to “State Government Entity.” If
+FALSE, move to the next line… and so on. The last line is a catchall;
+anything that hasn’t been caught by the criteria above will be caught
+here. If there’s a value that is not 1, 2 or 3 in this column, we want
+our new column to read “Error” because it’s not a valid value.</p>
+<pre class="r"><code># make it permanent
+osha &lt;- osha %&gt;% mutate(estab_type_desc = case_when(
+  establishment_type==1 ~ &quot;Not a Government Entity&quot;,
+  establishment_type==2 ~ &quot;State Government Entity&quot;,
+  establishment_type==3 ~ &quot;Local Government Entity&quot;,
+  TRUE ~ &quot;Error&quot;
+))</code></pre>
 </div>
-<div id="summary-functions-for-analysis-used-in-summarise-or-summarize" class="section level3">
-<h3>Summary functions for analysis, used in <code>summarise()</code> or
-<code>summarize()</code>:</h3>
-<ul>
-<li><strong>n()</strong> : count rows or observations (no arguments in
-the parentheses).
-<ul>
-<li>ex: <code>summarise(num = n())</code></li>
-</ul></li>
-<li><strong>n_distinct()</strong> : counts unique values in any column.
-<ul>
-<li>ex: <code>summarise(employees = n_distinct(name))</code></li>
-</ul></li>
-<li><strong>sum()</strong> : sum a numbers column. If NAs are present
-will return NA, unless <code>na.rm=T</code> is used.
-<ul>
-<li>ex: <code>summarise(total = sum(number_column, na.rm=T))</code></li>
-</ul></li>
-<li><strong>mean()</strong> : average a numbers column. If NAs are
-present will return NA, unless <code>na.rm=T</code> is used.</li>
-<li><strong>median()</strong> : get the median of a numbers column. If
-NAs are present will return NA, unless <code>na.rm=T</code> is
-used.</li>
-<li><strong>range()</strong> : get the highest and lowest values in a
-column. If NAs are present will return NA, unless <code>na.rm=T</code>
-is used. This is best used with <code>reframe()</code> instead of
-<code>summarise()</code>:
-<ul>
-<li>ex: <code>reframe(range(column))</code></li>
-</ul></li>
-</ul>
+<div id="working-with-strings" class="section level3">
+<h3>Working with strings</h3>
+<p>For this exercise, we’ll use <code>poverty_original</code>, an
+original file that I got from the Census Bureau. You can make it easier
+to use and analyze with several techniques.</p>
+<pre class="r"><code>glimpse(poverty)</code></pre>
+<pre><code>## Rows: 28,989
+## Columns: 5
+## $ GEOID    &lt;chr&gt; &quot;01001&quot;, &quot;01001&quot;, &quot;01001&quot;, &quot;01001&quot;, &quot;01001&quot;, &quot;01001&quot;, &quot;01001&quot;…
+## $ NAME     &lt;chr&gt; &quot;Autauga County, Alabama&quot;, &quot;Autauga County, Alabama&quot;, &quot;Autaug…
+## $ variable &lt;chr&gt; &quot;population&quot;, &quot;below50&quot;, &quot;below125&quot;, &quot;below150&quot;, &quot;below185&quot;, …
+## $ estimate &lt;dbl&gt; 55639, 3504, 10760, 12611, 15883, 17499, 27259, 35423, 42806,…
+## $ moe      &lt;dbl&gt; NA, 858, 1288, 1349, 1480, 1541, 1453, 1418, 1258, NA, 1415, …</code></pre>
+<p>First, let’s do some string manipulation. There are many many things
+you can do to manipulate strings with the <code>stringr</code> package
+(included in <code>tidyverse</code>). <a href="https://github.com/ireapps/R-for-data-analysis-2022/blob/main/docs/strings.pdf">See
+the cheat sheet</a>.</p>
+<p>I’ll highlight a few. First, take a look at the <code>GEOID</code>
+column. This is a FIPS code column, standard in Census datasets, but
+it’s a universal numbering system that identifies different geographies.
+The first two numbers of this FIPS code is the state FIPS, and the last
+three are the county FIPS. You can use these to easily join tables with
+other data that includes FIPS, without having to worry about whether the
+states and counties are spelled or represented exactly the same way.</p>
+<p>Start by pulling out the first two numbers for the state FIPS, using
+the <code>str_sub()</code> function, which is one function you can use
+to subset strings:</p>
+<pre class="r"><code>?str_sub
+
+# arguments: (string to parse, start position, stop position)
+# using head() to limit results, just for demonstration:
+head(str_sub(poverty$GEOID, 1, 2))</code></pre>
+<pre><code>## [1] &quot;01&quot; &quot;01&quot; &quot;01&quot; &quot;01&quot; &quot;01&quot; &quot;01&quot;</code></pre>
+<pre class="r"><code># test it out with mutate()
+poverty %&gt;% mutate(state_FIPS = str_sub(GEOID,1,2), .after=GEOID)</code></pre>
+<pre><code>## # A tibble: 28,989 × 6
+##    GEOID state_FIPS NAME                    variable   estimate   moe
+##    &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;                   &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt;
+##  1 01001 01         Autauga County, Alabama population    55639    NA
+##  2 01001 01         Autauga County, Alabama below50        3504   858
+##  3 01001 01         Autauga County, Alabama below125      10760  1288
+##  4 01001 01         Autauga County, Alabama below150      12611  1349
+##  5 01001 01         Autauga County, Alabama below185      15883  1480
+##  6 01001 01         Autauga County, Alabama below200      17499  1541
+##  7 01001 01         Autauga County, Alabama below300      27259  1453
+##  8 01001 01         Autauga County, Alabama below400      35423  1418
+##  9 01001 01         Autauga County, Alabama below500      42806  1258
+## 10 01003 01         Baldwin County, Alabama population   218289    NA
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># create a new column
+poverty &lt;- poverty %&gt;% mutate(state_FIPS = str_sub(GEOID,1,2), .after=GEOID)</code></pre>
+<p>Now try it out on the county FIPS:</p>
+<pre class="r"><code># test it out with mutate()
+poverty %&gt;% mutate(county_FIPS = str_sub(GEOID,3,5), .after=GEOID)</code></pre>
+<pre><code>## # A tibble: 28,989 × 7
+##    GEOID county_FIPS state_FIPS NAME                    variable  estimate   moe
+##    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;                   &lt;chr&gt;        &lt;dbl&gt; &lt;dbl&gt;
+##  1 01001 001         01         Autauga County, Alabama populati…    55639    NA
+##  2 01001 001         01         Autauga County, Alabama below50       3504   858
+##  3 01001 001         01         Autauga County, Alabama below125     10760  1288
+##  4 01001 001         01         Autauga County, Alabama below150     12611  1349
+##  5 01001 001         01         Autauga County, Alabama below185     15883  1480
+##  6 01001 001         01         Autauga County, Alabama below200     17499  1541
+##  7 01001 001         01         Autauga County, Alabama below300     27259  1453
+##  8 01001 001         01         Autauga County, Alabama below400     35423  1418
+##  9 01001 001         01         Autauga County, Alabama below500     42806  1258
+## 10 01003 003         01         Baldwin County, Alabama populati…   218289    NA
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># create a new column
+poverty &lt;- poverty %&gt;% mutate(county_FIPS = str_sub(GEOID,3,5), .after=GEOID)</code></pre>
+<p>One last string to manipulate here, and that is the <code>NAME</code>
+column. In the data we worked with eariler this week, I had separated
+out county and state names to make it easier to work with. I did this
+using the <code>separate()</code> function, which allows you to split a
+column into multiple columns based on a delimiter:</p>
+<pre class="r"><code>?separate_wider_delim</code></pre>
+<p>Note that you can identify a separator with the <code>sep =</code>
+argument; you can decide whether to remove the original column with the
+<code>remove =</code> argument (the default is TRUE).</p>
+<pre class="r"><code># test it out
+poverty %&gt;% 
+  separate_wider_delim(cols=NAME, delim=&quot;, &quot;, names=c(&quot;county&quot;,&quot;state&quot;))</code></pre>
+<pre><code>## # A tibble: 28,989 × 8
+##    GEOID county_FIPS state_FIPS county         state   variable   estimate   moe
+##    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;   &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt;
+##  1 01001 001         01         Autauga County Alabama population    55639    NA
+##  2 01001 001         01         Autauga County Alabama below50        3504   858
+##  3 01001 001         01         Autauga County Alabama below125      10760  1288
+##  4 01001 001         01         Autauga County Alabama below150      12611  1349
+##  5 01001 001         01         Autauga County Alabama below185      15883  1480
+##  6 01001 001         01         Autauga County Alabama below200      17499  1541
+##  7 01001 001         01         Autauga County Alabama below300      27259  1453
+##  8 01001 001         01         Autauga County Alabama below400      35423  1418
+##  9 01001 001         01         Autauga County Alabama below500      42806  1258
+## 10 01003 003         01         Baldwin County Alabama population   218289    NA
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># try it with &#39;remove = FALSE&#39;; this preserves the original column
+poverty %&gt;% 
+  separate_wider_delim(cols=NAME, delim=&quot;, &quot;, names=c(&quot;county&quot;,&quot;state&quot;), cols_remove = FALSE)</code></pre>
+<pre><code>## # A tibble: 28,989 × 9
+##    GEOID county_FIPS state_FIPS county       state NAME  variable estimate   moe
+##    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;        &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt;
+##  1 01001 001         01         Autauga Cou… Alab… Auta… populat…    55639    NA
+##  2 01001 001         01         Autauga Cou… Alab… Auta… below50      3504   858
+##  3 01001 001         01         Autauga Cou… Alab… Auta… below125    10760  1288
+##  4 01001 001         01         Autauga Cou… Alab… Auta… below150    12611  1349
+##  5 01001 001         01         Autauga Cou… Alab… Auta… below185    15883  1480
+##  6 01001 001         01         Autauga Cou… Alab… Auta… below200    17499  1541
+##  7 01001 001         01         Autauga Cou… Alab… Auta… below300    27259  1453
+##  8 01001 001         01         Autauga Cou… Alab… Auta… below400    35423  1418
+##  9 01001 001         01         Autauga Cou… Alab… Auta… below500    42806  1258
+## 10 01003 003         01         Baldwin Cou… Alab… Bald… populat…   218289    NA
+## # ℹ 28,979 more rows</code></pre>
+<p>Now make it permanent</p>
+<pre class="r"><code>poverty &lt;- poverty %&gt;% 
+  separate_wider_delim(cols=NAME, delim=&quot;, &quot;, names=c(&quot;county&quot;,&quot;state&quot;), cols_remove = FALSE)</code></pre>
+<p>There are many things you can do with <code>stringr</code>. Here are
+a few more examples:</p>
+<pre class="r"><code># join strings together
+poverty %&gt;% 
+  mutate(county_state = str_c(county, &quot;, &quot;, state)) %&gt;% 
+  select(county, state, county_state)</code></pre>
+<pre><code>## # A tibble: 28,989 × 3
+##    county         state   county_state           
+##    &lt;chr&gt;          &lt;chr&gt;   &lt;chr&gt;                  
+##  1 Autauga County Alabama Autauga County, Alabama
+##  2 Autauga County Alabama Autauga County, Alabama
+##  3 Autauga County Alabama Autauga County, Alabama
+##  4 Autauga County Alabama Autauga County, Alabama
+##  5 Autauga County Alabama Autauga County, Alabama
+##  6 Autauga County Alabama Autauga County, Alabama
+##  7 Autauga County Alabama Autauga County, Alabama
+##  8 Autauga County Alabama Autauga County, Alabama
+##  9 Autauga County Alabama Autauga County, Alabama
+## 10 Baldwin County Alabama Baldwin County, Alabama
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># make all upper case
+poverty %&gt;% 
+  mutate(COUNTY = str_to_upper(county)) %&gt;% 
+  select(county, COUNTY)</code></pre>
+<pre><code>## # A tibble: 28,989 × 2
+##    county         COUNTY        
+##    &lt;chr&gt;          &lt;chr&gt;         
+##  1 Autauga County AUTAUGA COUNTY
+##  2 Autauga County AUTAUGA COUNTY
+##  3 Autauga County AUTAUGA COUNTY
+##  4 Autauga County AUTAUGA COUNTY
+##  5 Autauga County AUTAUGA COUNTY
+##  6 Autauga County AUTAUGA COUNTY
+##  7 Autauga County AUTAUGA COUNTY
+##  8 Autauga County AUTAUGA COUNTY
+##  9 Autauga County AUTAUGA COUNTY
+## 10 Baldwin County BALDWIN COUNTY
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># make all lower case
+poverty %&gt;% 
+  mutate(county_lower = str_to_lower(county)) %&gt;% 
+  select(county, county_lower)</code></pre>
+<pre><code>## # A tibble: 28,989 × 2
+##    county         county_lower  
+##    &lt;chr&gt;          &lt;chr&gt;         
+##  1 Autauga County autauga county
+##  2 Autauga County autauga county
+##  3 Autauga County autauga county
+##  4 Autauga County autauga county
+##  5 Autauga County autauga county
+##  6 Autauga County autauga county
+##  7 Autauga County autauga county
+##  8 Autauga County autauga county
+##  9 Autauga County autauga county
+## 10 Baldwin County baldwin county
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code># replace all instances of a string (in this case you should keep in mind that there are Parishes and Cities and Municipios as well)
+poverty %&gt;% 
+  mutate(new_county = str_replace(county, &quot; County&quot;, &quot;&quot;)) %&gt;% 
+  select(county, new_county)</code></pre>
+<pre><code>## # A tibble: 28,989 × 2
+##    county         new_county
+##    &lt;chr&gt;          &lt;chr&gt;     
+##  1 Autauga County Autauga   
+##  2 Autauga County Autauga   
+##  3 Autauga County Autauga   
+##  4 Autauga County Autauga   
+##  5 Autauga County Autauga   
+##  6 Autauga County Autauga   
+##  7 Autauga County Autauga   
+##  8 Autauga County Autauga   
+##  9 Autauga County Autauga   
+## 10 Baldwin County Baldwin   
+## # ℹ 28,979 more rows</code></pre>
 </div>
-<div id="supplementary-functions-for-manipulating-data" class="section level3">
-<h3>Supplementary functions for manipulating data:</h3>
-<ul>
-<li><strong>clean_names()</strong> : from the <code>janitor</code>
-package, standardizes column names in a dataset to all lowercase, and
-replaces non-letter characters and spaces to underscores
-(<code>_</code>).
-<ul>
-<li>ex: <code>tibble &lt;- clean_names(tibble)</code></li>
-</ul></li>
-<li><strong>is.na()</strong> : used within <code>filter()</code> to find
-<code>NA</code>s (NULLs).
-<ul>
-<li>find nulls: <code>filter(is.na(column))</code></li>
-<li>exclude nulls: <code>filter(!is.na(column))</code></li>
-</ul></li>
-<li><strong>as.numeric()</strong> : converts strings to numbers; will
-coerce non-numeric values into NA.</li>
-<li><strong>as.character()</strong> : converts non-string values to
-strings.</li>
-</ul>
+<div id="reshaping-data" class="section level3">
+<h3>Reshaping data</h3>
+<p>There’s one last thing to do to the <code>poverty</code> table. In
+this example, each variable (i.e. <code>below50</code>,
+<code>below125</code>, etc) is its own row. To make it easier to do
+calculations by county, I transposed this data so that each variable
+would be its own column rather than row. I did that using
+<code>pivot_wider()</code> (for the sake of this example, I’m going to
+exclude the margin of error, or <code>moe</code>).</p>
+<pre class="r"><code>poverty %&gt;% 
+  select(-moe) %&gt;% 
+  pivot_wider(names_from=variable, values_from=estimate)</code></pre>
+<pre><code>## # A tibble: 3,221 × 15
+##    GEOID county_FIPS state_FIPS county   state NAME  population below50 below125
+##    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+##  1 01001 001         01         Autauga… Alab… Auta…      55639    3504    10760
+##  2 01003 003         01         Baldwin… Alab… Bald…     218289    7250    28632
+##  3 01005 005         01         Barbour… Alab… Barb…      25026    3018     7553
+##  4 01007 007         01         Bibb Co… Alab… Bibb…      22374    1875     4646
+##  5 01009 009         01         Blount … Alab… Blou…      57755    3834    10542
+##  6 01011 011         01         Bullock… Alab… Bull…      10173    1074     3472
+##  7 01013 013         01         Butler … Alab… Butl…      19726    1194     4997
+##  8 01015 015         01         Calhoun… Alab… Calh…     114324    7486    25293
+##  9 01017 017         01         Chamber… Alab… Cham…      33427    1628     7294
+## 10 01019 019         01         Cheroke… Alab… Cher…      26035     973     5424
+## # ℹ 3,211 more rows
+## # ℹ 6 more variables: below150 &lt;dbl&gt;, below185 &lt;dbl&gt;, below200 &lt;dbl&gt;,
+## #   below300 &lt;dbl&gt;, below400 &lt;dbl&gt;, below500 &lt;dbl&gt;</code></pre>
+<p>There is a function called <code>pivot_longer()</code> that does the
+opposite:</p>
+<pre class="r"><code># First I&#39;ll create a new variable with the wider data:
+poverty_wide &lt;- poverty %&gt;% 
+  select(-moe) %&gt;% 
+  pivot_wider(names_from=variable, values_from=estimate)
+
+# Then I&#39;ll turn it back to long using pivot_longer()
+poverty_wide %&gt;% pivot_longer(cols = population:below500, names_to=&quot;variable&quot;, values_to=&quot;estimate&quot;)</code></pre>
+<pre><code>## # A tibble: 28,989 × 8
+##    GEOID county_FIPS state_FIPS county         state   NAME    variable estimate
+##    &lt;chr&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;
+##  1 01001 001         01         Autauga County Alabama Autaug… populat…    55639
+##  2 01001 001         01         Autauga County Alabama Autaug… below50      3504
+##  3 01001 001         01         Autauga County Alabama Autaug… below125    10760
+##  4 01001 001         01         Autauga County Alabama Autaug… below150    12611
+##  5 01001 001         01         Autauga County Alabama Autaug… below185    15883
+##  6 01001 001         01         Autauga County Alabama Autaug… below200    17499
+##  7 01001 001         01         Autauga County Alabama Autaug… below300    27259
+##  8 01001 001         01         Autauga County Alabama Autaug… below400    35423
+##  9 01001 001         01         Autauga County Alabama Autaug… below500    42806
+## 10 01003 003         01         Baldwin County Alabama Baldwi… populat…   218289
+## # ℹ 28,979 more rows</code></pre>
+<pre class="r"><code>poverty_wide %&gt;% 
+  mutate(below200_pct = below200/population) %&gt;%
+  select(state, county, below200, population, below200_pct) %&gt;% 
+  filter(county == &quot;Boone County&quot;)</code></pre>
+<pre><code>## # A tibble: 8 × 5
+##   state         county       below200 population below200_pct
+##   &lt;chr&gt;         &lt;chr&gt;           &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+## 1 Arkansas      Boone County    13568      37525        0.362
+## 2 Illinois      Boone County    13609      53293        0.255
+## 3 Indiana       Boone County     9721      66875        0.145
+## 4 Iowa          Boone County     5590      26381        0.212
+## 5 Kentucky      Boone County    24254     132368        0.183
+## 6 Missouri      Boone County    57430     179704        0.320
+## 7 Nebraska      Boone County     1566       5228        0.300
+## 8 West Virginia Boone County     8637      21897        0.394</code></pre>
+<pre class="r"><code>poverty_wide %&gt;% 
+  group_by(state) %&gt;% 
+  summarise(population = sum(population),
+            below200 = sum(below200)) %&gt;% 
+  mutate(below200_pct = below200/population) %&gt;% 
+  arrange(desc(below200_pct))</code></pre>
+<pre><code>## # A tibble: 52 × 4
+##    state          population below200 below200_pct
+##    &lt;chr&gt;               &lt;dbl&gt;    &lt;dbl&gt;        &lt;dbl&gt;
+##  1 Puerto Rico       3255642  2325941        0.714
+##  2 Mississippi       2981835  1192766        0.400
+##  3 New Mexico        2097021   810439        0.386
+##  4 Arkansas          3011873  1126037        0.374
+##  5 Louisiana         4664616  1729779        0.371
+##  6 West Virginia     1807426   655661        0.363
+##  7 Oklahoma          3949342  1377099        0.349
+##  8 Alabama           4893186  1697526        0.347
+##  9 Kentucky          4461952  1539596        0.345
+## 10 South Carolina    5091517  1689894        0.332
+## # ℹ 42 more rows</code></pre>
 </div>
 
 
